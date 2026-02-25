@@ -1,0 +1,345 @@
+<!-- developed and copyright by Botos Csaba (botos.official@gmail.com), 2026 -->
+<!-- Licensed under the MIT License. See LICENSE file for details. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BroGI - Replay Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'EB Garamond', serif;
+      font-size: 18px;
+      background: white;
+      color: black;
+      min-height: 100vh;
+    }
+    a { color: black; }
+
+    .wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 20px;
+    }
+
+    header {
+      text-align: center;
+      padding-bottom: 15px;
+      border-bottom: 1.5px solid black;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-size: 42px;
+      font-weight: normal;
+      color: black;
+      margin-bottom: 4px;
+    }
+    header .subtitle {
+      font-size: 18px;
+      color: #555;
+    }
+
+    /* --- File drop zone --- */
+    .file-drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 8px;
+      padding: 60px 20px;
+      text-align: center;
+      color: #666;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin: 40px 0;
+    }
+    .file-drop-zone:hover,
+    .file-drop-zone.dragover {
+      border-color: #333;
+      background: #f8f8f8;
+    }
+    .file-drop-zone input[type="file"] {
+      display: none;
+    }
+    .file-drop-zone .drop-label {
+      font-size: 20px;
+    }
+    .file-drop-zone .drop-hint {
+      font-size: 14px;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    /* --- Replay container --- */
+    .replay-container {
+      display: none;
+    }
+    .replay-container.visible {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 20px;
+    }
+
+    /* Left column */
+    .replay-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+    #game-canvas {
+      border: 3px solid #ccc;
+      background: #000;
+      display: block;
+      max-width: 100%;
+    }
+
+    /* Playback controls */
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .playback-controls button {
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    .playback-controls button:hover {
+      background: #eee;
+    }
+    .step-label {
+      font-size: 15px;
+      color: #333;
+      min-width: 120px;
+      text-align: center;
+    }
+    .playback-controls select {
+      font-family: 'EB Garamond', serif;
+      font-size: 14px;
+      padding: 2px 6px;
+      border: 1px solid #999;
+      background: #eee;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    #step-scrubber {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      display: block;
+    }
+
+    /* Metadata bar */
+    .metadata-bar {
+      font-size: 14px;
+      color: #555;
+      display: flex;
+      gap: 15px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .metadata-bar span {
+      white-space: nowrap;
+    }
+
+    /* Action log */
+    .action-log {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 6px;
+      background: #fafafa;
+    }
+    .action-log .log-entry {
+      padding: 1px 4px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .action-log .log-entry.current-step {
+      background: #fff3b0;
+      font-weight: bold;
+    }
+    .action-log .log-separator {
+      border-top: 1px solid #ccc;
+      margin: 4px 0;
+      font-style: italic;
+      color: #888;
+      padding: 2px 4px;
+    }
+
+    /* Right column */
+    .replay-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    /* Thought panel */
+    .thought-panel {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 12px;
+    }
+    .thought-panel h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #333;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 4px;
+    }
+    .thought-section {
+      margin-bottom: 10px;
+    }
+    .thought-section .label {
+      font-size: 13px;
+      font-weight: bold;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .thought-section .content {
+      font-size: 15px;
+      color: #222;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    /* Full prompt details */
+    .prompt-details {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+    }
+    .prompt-details summary {
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+    }
+    .prompt-details .prompt-content {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 8px 12px;
+      border-top: 1px solid #eee;
+      background: #f9f9f9;
+    }
+
+    /* Help bar */
+    .help-bar {
+      font-size: 13px;
+      color: #888;
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .replay-container.visible {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1><b>Bro</b>wser <b>G</b>ame <b>I</b>nterpreter -- Replay Viewer</h1>
+      <div class="subtitle">Load a .replay.json file to step through agent gameplay</div>
+    </header>
+
+    <div class="file-drop-zone" id="file-drop-zone">
+      <div class="drop-label">Drop a .replay.json file here or click to browse</div>
+      <div class="drop-hint">Generated by: python -m src.llm_eval.export_replay &lt;logfile&gt;</div>
+      <input type="file" id="file-input" accept=".json">
+    </div>
+
+    <div class="replay-container" id="replay-container">
+      <div class="replay-left">
+        <div class="canvas-wrapper">
+          <canvas id="game-canvas"></canvas>
+        </div>
+
+        <div class="playback-controls">
+          <button id="btn-step-back" title="Step back">&lt;</button>
+          <button id="btn-play-pause" title="Play/Pause">Play</button>
+          <button id="btn-step-fwd" title="Step forward">&gt;</button>
+          <span class="step-label" id="step-label">Step 0 / 0</span>
+          <select id="speed-select">
+            <option value="1">1 sps</option>
+            <option value="2" selected>2 sps</option>
+            <option value="4">4 sps</option>
+            <option value="7">7 sps</option>
+            <option value="10">10 sps</option>
+            <option value="20">20 sps</option>
+          </select>
+        </div>
+
+        <input type="range" id="step-scrubber" min="0" max="0" value="0">
+
+        <div class="metadata-bar" id="metadata-bar">
+          <span id="meta-game">Game: --</span>
+          <span id="meta-model">Model: --</span>
+          <span id="meta-outcome">Outcome: --</span>
+        </div>
+
+        <div class="action-log" id="action-log"></div>
+      </div>
+
+      <div class="replay-right">
+        <details class="prompt-details">
+          <summary>System Prompt</summary>
+          <div class="prompt-content" id="system-prompt-content">(select a step)</div>
+        </details>
+
+        <details class="prompt-details">
+          <summary>Full User Prompt</summary>
+          <div class="prompt-content" id="prompt-content">(select a step)</div>
+        </details>
+
+        <div class="thought-panel" id="thought-panel">
+          <h3>Agent Thoughts</h3>
+          <div class="thought-section">
+            <div class="label">Commitment</div>
+            <div class="content" id="thought-commitment">--</div>
+          </div>
+          <div class="thought-section">
+            <div class="label">Reasoning</div>
+            <div class="content" id="thought-reasoning">--</div>
+          </div>
+          <div class="thought-section">
+            <div class="label">Note to Self</div>
+            <div class="content" id="thought-note">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="help-bar" id="help-bar">
+      Left/Right = step | Space = play/pause | Home/End = jump to start/end
+    </div>
+  </div>
+
+  <script type="module" src="replay-main.js"></script>
+</body>
+</html>

@@ -1,12 +1,16 @@
 1. Do a self-playing demo, in which we show how an agent solves any arbitrary games.
 This needs a replay type of the game box into which we can load specific states of games.
+Unfortunately the current logging of the @src/llm_eval does not save the states of the games, just the actions of the agent, relying on the environment to be reproducible.
+In general this assumption was true, since the @src interpreter is seeded, however now that we have the javascript port, brogi, I am not sure if the same assumption holds.
 
 TODO:
 - figure out how to port the @src/llm_eval/replay.py to JS
-- restore game states from log files
-- visualize narratives/reasoning only (investor demo)
-- visualize full input vs output of the model (research technical demo)
-- add OpenRouter online eval tool too if API key is passed
+    - write a translation script that takes the raw actions (e.g. @out/test.json)
+    - replays them in the original @src/llm_eval environment
+    - saves the state at each step, both for deterministic and non-deterministic games
+- visualize full input vs output of the model (research technical demo) -- on a different html page
+- visualize narratives/reasoning only (investor demo) -- on a different html page
+
 
 
 2. Do a demo on live narrative generation on human actions with arbitrary game rules in arbitrary environments.
