@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VGDL Interpreter</title>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'EB Garamond', serif;
+      font-size: 22px;
+      background: white;
+      color: black;
+      min-height: 100vh;
+    }
+    a { color: black; }
+
+    .wrapper {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 20px 20px;
+    }
+
+    header {
+      text-align: center;
+      padding-bottom: 15px;
+      border-bottom: 1.5px solid black;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-size: 42px;
+      color: black;
+      margin-bottom: 4px;
+    }
+    header .subtitle {
+      font-size: 18px;
+      color: #555;
+    }
+
+    /* --- Game Box --- */
+    .game-box {
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .canvas-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    #game-canvas {
+      border: 3px solid #ccc;
+      background: #000;
+      outline: none;
+      display: block;
+    }
+    #game-canvas:focus {
+      border-color: #333;
+      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Canvas overlay buttons */
+    .canvas-btn {
+      position: absolute;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 4px;
+      width: 28px;
+      height: 28px;
+      padding: 3px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .canvas-btn:hover {
+      background: rgba(255,255,255,0.9);
+    }
+    .canvas-btn img {
+      width: 18px;
+      height: 18px;
+    }
+
+    #btn-cog { top: 6px; left: 6px; }
+    #btn-play { top: 6px; right: 38px; }
+    #btn-reset { top: 6px; right: 6px; }
+
+    /* Speed popover */
+    .speed-popover {
+      display: none;
+      position: absolute;
+      top: 38px;
+      left: 6px;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 8px 10px;
+      z-index: 20;
+      font-size: 14px;
+    }
+    .speed-popover.open { display: block; }
+    .speed-popover label {
+      font-size: 14px;
+      color: #333;
+    }
+    .speed-popover select {
+      font-family: 'EB Garamond', serif;
+      font-size: 14px;
+      padding: 2px 6px;
+      border: 1px solid #999;
+      background: #eee;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    /* Create New Env overlay button */
+    #btn-create-env {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-family: 'EB Garamond', serif;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 15;
+    }
+    #btn-create-env:hover {
+      background: rgba(0,0,0,0.9);
+    }
+
+    /* Flap tabs */
+    .flap-tabs {
+      display: flex;
+      gap: 0;
+    }
+    .flap-tab {
+      flex: 1;
+      text-align: center;
+      font-family: 'EB Garamond', serif;
+      font-size: 15px;
+      padding: 4px 14px;
+      border: 1px solid #ccc;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      background: #eee;
+      color: #555;
+      cursor: pointer;
+    }
+    .flap-tab:hover { background: #ddd; }
+    .flap-tab.active {
+      color: black;
+      border-color: #aaa;
+      border-bottom: none;
+      border-radius: 0;
+    }
+    #flap-tab-desc.active { background: #f0f8f0; }
+    #flap-tab-level.active { background: #fdf0f0; }
+
+    /* Flap panels */
+    .flap-panel {
+      display: none;
+      border: 1px solid #aaa;
+      border-top: none;
+      border-radius: 0 0 4px 4px;
+      padding: 8px;
+    }
+    .flap-panel.open { display: block; }
+    .flap-panel-desc { background: #f0f8f0; }
+    .flap-panel-level { background: #fdf0f0; }
+
+    .flap-panel textarea {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: black;
+      resize: vertical;
+      tab-size: 4;
+    }
+    .flap-panel-desc textarea { height: 300px; }
+    .flap-panel-level textarea { height: 180px; }
+
+    /* Help text */
+    .help {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    /* --- Library Section --- */
+    .library-section {
+      border-top: 1.5px solid black;
+      margin-top: 30px;
+      padding-top: 20px;
+    }
+    .library-section h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 14px;
+    }
+    .library-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .library-game {
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .library-game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 18px;
+      background: #f8f8f8;
+      user-select: none;
+    }
+    .library-game-header:hover { background: #eee; }
+    .library-game-header .arrow {
+      font-size: 14px;
+      color: #888;
+      transition: none;
+    }
+    .library-game.expanded .library-game-header .arrow {
+      transform: rotate(90deg);
+    }
+    .library-game-body {
+      display: none;
+      padding: 6px 10px;
+      border-top: 1px solid #ddd;
+    }
+    .library-game.expanded .library-game-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .library-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 15px;
+    }
+    .library-item-desc { background: #f0f8f0; }
+    .library-item-level { background: #fdf0f0; }
+
+    .clip-btn {
+      background: none;
+      border: none;
+      padding: 2px;
+      cursor: pointer;
+      opacity: 0.35;
+      display: flex;
+      align-items: center;
+    }
+    .clip-btn:hover { opacity: 0.8; }
+    .clip-btn img {
+      width: 16px;
+      height: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <h1>VGDL-JS</h1>
+      <div class="subtitle">Video Game Description Language -- Interactive Interpreter</div>
+    </header>
+
+    <div class="game-box">
+      <div class="canvas-wrapper">
+        <canvas id="game-canvas" width="630" height="360" tabindex="0"></canvas>
+        <button class="canvas-btn" id="btn-cog" tabindex="-1"><img src="cog.png" alt="settings"></button>
+        <button class="canvas-btn" id="btn-play" tabindex="-1"><img id="play-icon" src="play.png" alt="play"></button>
+        <button class="canvas-btn" id="btn-reset" tabindex="-1"><img src="reset.png" alt="reset"></button>
+        <div class="speed-popover" id="speed-popover">
+          <label>Speed:
+            <select id="tick-mode">
+              <option value="action">On keypress</option>
+              <option value="2">2 FPS</option>
+              <option value="4">4 FPS</option>
+              <option value="7" selected>7 FPS</option>
+              <option value="10">10 FPS</option>
+              <option value="15">15 FPS</option>
+              <option value="30">30 FPS</option>
+            </select>
+          </label>
+        </div>
+        <button id="btn-create-env">Create New Env</button>
+      </div>
+
+      <div class="flap-tabs">
+        <button class="flap-tab" id="flap-tab-desc">Game Description</button>
+        <button class="flap-tab" id="flap-tab-level">Level Layout</button>
+      </div>
+      <div class="flap-panel flap-panel-desc" id="flap-panel-desc">
+        <textarea id="game-desc" spellcheck="false"></textarea>
+      </div>
+      <div class="flap-panel flap-panel-level" id="flap-panel-level">
+        <textarea id="level-text" spellcheck="false"></textarea>
+      </div>
+
+      <div class="help">
+        Click canvas to focus | Arrow keys / WASD = move | Space = action | P = play/pause | Enter = load game
+      </div>
+    </div>
+
+    <div class="library-section">
+      <h2>Game Library</h2>
+      <div class="library-list" id="library-list"></div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

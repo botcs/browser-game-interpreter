@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VGDL-JS Tests</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a2e;
+      color: #eee;
+      padding: 20px;
+    }
+    h1 { color: #e94560; }
+    h3 {
+      color: #0af;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      border-bottom: 1px solid #333;
+      padding-bottom: 3px;
+    }
+    .suite { margin-bottom: 10px; }
+    .test {
+      padding: 2px 0 2px 20px;
+      font-size: 13px;
+    }
+    pre {
+      font-size: 12px;
+      margin: 0;
+      padding-left: 40px;
+    }
+    .summary {
+      border-top: 2px solid #555;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>VGDL-JS Test Runner</h1>
+  <div id="test-output"></div>
+
+  <script type="module">
+    import { summary } from './test-framework.js';
+    import { runRectTests } from './test-rect.js';
+    import { runActionTests } from './test-action.js';
+    import { runRegistryTests } from './test-registry.js';
+    import { runPhysicsTests } from './test-physics.js';
+    import { runSpriteTests } from './test-sprites.js';
+    import { runEffectTests } from './test-effects.js';
+    import { runTerminationTests } from './test-terminations.js';
+    import { runParserTests } from './test-parser.js';
+    import { runGameTests } from './test-game.js';
+
+    // Run all test suites
+    runRectTests();
+    runActionTests();
+    runRegistryTests();
+    runPhysicsTests();
+    runSpriteTests();
+    runEffectTests();
+    runTerminationTests();
+    runParserTests();
+    runGameTests();
+
+    // Print summary
+    const { passed, failed, total } = summary();
+    console.log(`Tests: ${passed}/${total} passed, ${failed} failed`);
+  </script>
+</body>
+</html>
