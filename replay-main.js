@@ -15,11 +15,10 @@ setupRegistry();
 let logData = null;
 let states = [];
 let replaySteps = [];
-let currentStepIndex = -1; // -1 = initial state, 0..N-1 = after step i
+let currentStepIndex = 0; // 0..N-1 = before step i's action, N = final state after last action
 let currentLevel = null;
 let currentGame = null;
 let activeLevel = null;
-let staticSprites = null; // cached floor/wall sprites from initial level build
 let playInterval = null;
 let playSpeed = 2;
 
@@ -48,6 +47,36 @@ const thoughtNote = document.getElementById('thought-note');
 const promptContent = document.getElementById('prompt-content');
 const systemPromptContent = document.getElementById('system-prompt-content');
 
+const flapTabDesc = document.getElementById('flap-tab-desc');
+const flapTabLevel = document.getElementById('flap-tab-level');
+const flapPanelDesc = document.getElementById('flap-panel-desc');
+const flapPanelLevel = document.getElementById('flap-panel-level');
+const gameDescEl = document.getElementById('game-desc');
+const levelTextEl = document.getElementById('level-text');
+
+
+// --- Flap tabs ---
+let activeFlap = null;
+
+function toggleFlap(which) {
+  if (activeFlap === which) {
+    activeFlap = null;
+    flapTabDesc.classList.remove('active');
+    flapTabLevel.classList.remove('active');
+    flapPanelDesc.classList.remove('open');
+    flapPanelLevel.classList.remove('open');
+    return;
+  }
+  activeFlap = which;
+  flapTabDesc.classList.toggle('active', which === 'desc');
+  flapTabLevel.classList.toggle('active', which === 'level');
+  flapPanelDesc.classList.toggle('open', which === 'desc');
+  flapPanelLevel.classList.toggle('open', which === 'level');
+}
+
+flapTabDesc.addEventListener('click', () => toggleFlap('desc'));
+flapTabLevel.addEventListener('click', () => toggleFlap('level'));
+
 
 // --- File loading ---
 dropZone.addEventListener('click', () => fileInput.click());
@@ -67,13 +96,18 @@ dropZone.addEventListener('drop', (e) => {
   if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
 });
 
-function handleFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const jsonObj = JSON.parse(e.target.result);
-    loadLog(jsonObj);
-  };
-  reader.readAsText(file);
+async function handleFile(file) {
+  let text;
+  if (file.name.endsWith('.gz')) {
+    // Decompress gzip using browser's built-in DecompressionStream
+    const ds = new DecompressionStream('gzip');
+    const decompressed = file.stream().pipeThrough(ds);
+    text = await new Response(decompressed).text();
+  } else {
+    text = await file.text();
+  }
+  const jsonObj = JSON.parse(text);
+  loadLog(jsonObj);
 }
 
 
@@ -102,17 +136,21 @@ function loadLog(jsonObj) {
   metaModel.textContent = 'Model: ' + (logData.model || '--');
   metaOutcome.textContent = 'Outcome: ' + (logData.outcome || '--');
 
-  // Set up scrubber
-  scrubber.min = -1;
-  scrubber.max = replaySteps.length - 1;
-  scrubber.value = -1;
+  // Set up scrubber: 0..N-1 = steps, N = final state after last action
+  scrubber.min = 0;
+  scrubber.max = replaySteps.length;
+  scrubber.value = 0;
 
   // Build action log
   buildActionLog();
 
-  // Reset and render initial state
+  // Populate game description flap
+  const gameData = GAMES[logData.game];
+  gameDescEl.value = gameData.description;
+
+  // Reset and render first step
   activeLevel = null;
-  goToStep(-1);
+  goToStep(0);
 }
 
 
@@ -130,16 +168,8 @@ function buildLevelIfNeeded(levelNum) {
   currentLevel = currentGame.buildLevel(lvlStr);
   activeLevel = levelNum;
 
-  // Capture static sprites (floor, wall) from the freshly-built level.
-  // The Python export strips these to save space, so we need to re-inject them.
-  const initState = currentLevel.getGameState();
-  staticSprites = {};
-  const STATIC_KEYS = new Set(['floor', 'wall']);
-  for (const [key, spriteList] of Object.entries(initState.sprites)) {
-    if (STATIC_KEYS.has(key)) {
-      staticSprites[key] = spriteList;
-    }
-  }
+  // Update level layout flap
+  levelTextEl.value = lvlStr;
 
   renderer.resize(currentLevel.width, currentLevel.height);
 }
@@ -174,43 +204,36 @@ function gridStateToPixelState(gridState, blockSize) {
 
 
 function goToStep(index) {
-  // Clamp: index -1 means initial state, max is replaySteps.length - 1
-  const maxIdx = replaySteps.length - 1;
-  if (index < -1) index = -1;
+  // Clamp: 0..N-1 = before step i's action, N = final state after last action
+  const maxIdx = replaySteps.length;
+  if (index < 0) index = 0;
   if (index > maxIdx) index = maxIdx;
 
   currentStepIndex = index;
 
   // Determine level number
   let levelNum;
-  if (index < 0) {
-    levelNum = logData.start_level || 0;
-  } else {
+  if (index < replaySteps.length) {
     levelNum = replaySteps[index].level !== undefined
       ? replaySteps[index].level
       : (logData.start_level || 0);
+  } else {
+    // Final state: use last step's level
+    const lastStep = replaySteps[replaySteps.length - 1];
+    levelNum = lastStep.level !== undefined ? lastStep.level : (logData.start_level || 0);
   }
 
   // Build level if needed (for sprite class info & rendering)
   buildLevelIfNeeded(levelNum);
 
-  // Show state BEFORE the action: states[i] is what the agent saw when choosing step i.
-  // states[0] = initial, states[i] = state before step i's action.
-  const stateIdx = Math.max(index, 0);
+  // states[i] = state before step i's action (what the LLM saw).
+  // states[N] = final state after last action.
+  const stateIdx = index;
   if (stateIdx < 0 || stateIdx >= states.length) return;
 
   const gridState = states[stateIdx];
   const blockSize = currentLevel.block_size;
   const pixelState = gridStateToPixelState(gridState, blockSize);
-
-  // Merge static sprites (floor, wall) from level build into the state
-  if (staticSprites) {
-    for (const [key, spriteList] of Object.entries(staticSprites)) {
-      if (!pixelState.sprites[key]) {
-        pixelState.sprites[key] = spriteList;
-      }
-    }
-  }
 
   // Apply state to level and render
   currentLevel.setGameState(pixelState);
@@ -252,7 +275,7 @@ function startPlayback() {
   btnPlayPause.textContent = 'Pause';
   playSpeed = Number(speedSelect.value) || 2;
   playInterval = setInterval(() => {
-    if (currentStepIndex >= replaySteps.length - 1) {
+    if (currentStepIndex >= replaySteps.length) {
       stopPlayback();
       return;
     }
@@ -273,8 +296,8 @@ function stopPlayback() {
 
 function updateStepLabel() {
   const total = replaySteps.length;
-  if (currentStepIndex < 0) {
-    stepLabel.textContent = 'Initial / ' + total + ' steps';
+  if (currentStepIndex >= total) {
+    stepLabel.textContent = 'Final / ' + total + ' steps';
   } else {
     const step = replaySteps[currentStepIndex];
     const lvl = step.level !== undefined ? step.level : '?';
@@ -286,12 +309,12 @@ function updateStepLabel() {
 
 
 function updateThoughtPanel() {
-  if (currentStepIndex < 0) {
-    thoughtCommitment.textContent = '(initial state)';
+  if (currentStepIndex >= replaySteps.length) {
+    thoughtCommitment.textContent = '(final state after last action)';
     thoughtReasoning.textContent = '--';
     thoughtNote.textContent = '--';
-    systemPromptContent.textContent = '(no prompt yet)';
-    promptContent.textContent = '(no prompt yet)';
+    systemPromptContent.textContent = logData.system_prompt || '(not available)';
+    promptContent.textContent = '(no prompt -- game ended)';
     return;
   }
 
@@ -410,12 +433,12 @@ document.addEventListener('keydown', (e) => {
     case 'Home':
       e.preventDefault();
       stopPlayback();
-      goToStep(-1);
+      goToStep(0);
       break;
     case 'End':
       e.preventDefault();
       stopPlayback();
-      goToStep(replaySteps.length - 1);
+      goToStep(replaySteps.length);
       break;
   }
 });
