@@ -79,7 +79,11 @@ flapTabLevel.addEventListener('click', () => toggleFlap('level'));
 
 
 // --- File loading ---
-dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('click', (e) => {
+  // Don't open file picker if a demo button was clicked
+  if (e.target.closest('.demo-btn')) return;
+  fileInput.click();
+});
 fileInput.addEventListener('change', (e) => {
   if (e.target.files.length > 0) handleFile(e.target.files[0]);
 });
@@ -108,6 +112,38 @@ async function handleFile(file) {
   }
   const jsonObj = JSON.parse(text);
   loadLog(jsonObj);
+}
+
+
+// --- Demo replay loading ---
+const RELEASE_BASE = './replays';
+const DEMO_FILES = {
+  'avoidGeorge_vgfmri4': 'avoidGeorge_vgfmri4_lvl0_20260123_084806.replay.json.gz',
+  'bait_vgfmri4': 'bait_vgfmri4_lvl0_20260123_084811.replay.json.gz',
+  'chase_vgfmri4': 'chase_vgfmri4_lvl0_20260123_084815.replay.json.gz',
+  'helper_vgfmri4': 'helper_vgfmri4_lvl0_20260123_084819.replay.json.gz',
+  'lemmings_vgfmri4': 'lemmings_vgfmri4_lvl0_20260123_084820.replay.json.gz',
+};
+
+for (const btn of document.querySelectorAll('.demo-btn')) {
+  btn.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const game = btn.dataset.game;
+    const filename = DEMO_FILES[game];
+    const url = `${RELEASE_BASE}/${filename}`;
+
+    // Disable all demo buttons while loading
+    const allBtns = document.querySelectorAll('.demo-btn');
+    for (const b of allBtns) b.classList.add('loading');
+    btn.textContent = 'Loading...';
+
+    const response = await fetch(url);
+    const ds = new DecompressionStream('gzip');
+    const decompressed = response.body.pipeThrough(ds);
+    const text = await new Response(decompressed).text();
+    const jsonObj = JSON.parse(text);
+    loadLog(jsonObj);
+  });
 }
 
 
