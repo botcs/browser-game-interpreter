@@ -59,6 +59,10 @@ canvas.addEventListener('keydown', (e) => {
     e.preventDefault();
     keysDown.add(k);
     lastKeyPressed = k;
+    // Auto-start on first game input
+    if (!playing) {
+      startPlaying();
+    }
     // In action mode, each keypress immediately triggers a tick
     if (getTickMode() === 'action') {
       doTick();
@@ -230,24 +234,19 @@ function buildLibrary() {
     const body = document.createElement('div');
     body.className = 'library-game-body';
 
-    // Description item
-    const descItem = document.createElement('div');
-    descItem.className = 'library-item library-item-desc';
-    const descLabel = document.createElement('span');
-    descLabel.textContent = 'Game Description';
-    descItem.appendChild(descLabel);
-    descItem.appendChild(makeClipBtn(game.description));
-    body.appendChild(descItem);
-
-    // Level items
+    // Level items -- click loads both description + level and triggers loadGame
     const levelNums = Object.keys(game.levels).map(Number).sort((a, b) => a - b);
     for (const n of levelNums) {
       const lvlItem = document.createElement('div');
       lvlItem.className = 'library-item library-item-level';
-      const lvlLabel = document.createElement('span');
-      lvlLabel.textContent = `Level ${n}`;
-      lvlItem.appendChild(lvlLabel);
-      lvlItem.appendChild(makeClipBtn(game.levels[n]));
+      lvlItem.style.cursor = 'pointer';
+      lvlItem.textContent = `Level ${n}`;
+      lvlItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        gameDesc.value = game.description;
+        levelText.value = game.levels[n];
+        loadGame();
+      });
       body.appendChild(lvlItem);
     }
 
@@ -257,33 +256,6 @@ function buildLibrary() {
   }
 }
 
-function copyToClipboard(text) {
-  // navigator.clipboard requires secure context (HTTPS/localhost).
-  // Fall back to execCommand for file:// or plain HTTP.
-  if (navigator.clipboard && window.isSecureContext) {
-    navigator.clipboard.writeText(text);
-    return;
-  }
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.left = '-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
-}
-
-function makeClipBtn(text) {
-  const btn = document.createElement('button');
-  btn.className = 'clip-btn';
-  btn.innerHTML = '<img src="clip.png" alt="copy">';
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    copyToClipboard(text);
-  });
-  return btn;
-}
 
 function loadDefaultGame() {
   const game = GAMES['bait_vgfmri4'];
