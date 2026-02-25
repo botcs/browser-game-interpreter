@@ -2319,4 +2319,116 @@ wA..w...............w
 wwwwwwwwwwwwwwwwwwwww`,
     },
   },
+  "forge_vgfmri1": {
+    description: `BasicGame
+    SpriteSet
+        floor > Immovable img=colors/LIGHTGRAY
+        furnace > Immovable img=colors/RED
+        slag > Immovable img=colors/PURPLE
+        avatar > MovingAvatar img=colors/YELLOW
+        gem > Resource img=colors/ORANGE limit=1
+        goal > Immovable img=colors/GREEN
+        ore > Passive img=colors/BROWN
+        wall > Immovable img=colors/DARKGRAY
+
+    LevelMapping
+        . > floor
+        w > floor wall
+        A > floor avatar
+        1 > floor ore
+        f > floor furnace
+        o > floor gem
+        g > floor goal
+        s > floor slag
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar slag > killSprite
+        avatar slag > changeScore scoreChange=-1
+
+        ore avatar > bounceForward
+        ore wall > stepBack
+        ore ore > stepBack
+        ore slag > stepBack
+
+        ore furnace > killSprite
+        ore furnace > changeScore scoreChange=5
+
+        avatar gem > changeScore scoreChange=5
+        avatar gem > changeResource resource=gem value=1
+        gem avatar > killSprite
+
+        goal avatar > killIfOtherHasMore resource=gem limit=1
+
+        floor EOS > killSprite
+        furnace EOS > killSprite
+        slag EOS > killSprite
+        avatar EOS > killSprite
+        gem EOS > killSprite
+        goal EOS > killSprite
+        ore EOS > killSprite
+        wall EOS > killSprite
+
+    TerminationSet
+        SpriteCounter stype=goal limit=0 win=True
+        SpriteCounter stype=avatar limit=0 win=False
+`,
+    levels: {
+      0: `wwwwwwwwwwwwwwwwwwwww
+w...................w
+w...A...............w
+w...................w
+w..........o........w
+w..............g....w
+w...................w
+wwwwwwwwwwwwwwwwwwwww`,
+      1: `wwwwwwwwwwwwwwwwwwwww
+w...................w
+w...A.........1.....w
+w...................w
+w.............f.....w
+w...................w
+w...................w
+w....o..............w
+w..............g....w
+w...................w
+wwwwwwwwwwwwwwwwwwwww`,
+      2: `wwwwwwwwwwwwwwwwwwwww
+w...................w
+w...A...............w
+w...................w
+w.....1w............w
+w......w............w
+w......w......f.....w
+w...................w
+w...o...............w
+w..............g....w
+w...................w
+wwwwwwwwwwwwwwwwwwwww`,
+      3: `wwwwwwwwwwwwwwwwwwwww
+w...................w
+w...A.............o.w
+w...................w
+w...1...............w
+w...s...............w
+w...s.............g.w
+w...................w
+w...f...............w
+w...................w
+w...................w
+wwwwwwwwwwwwwwwwwwwww`,
+      4: `wwwwwwwwwwwwwwwwwwwww
+w........w..........w
+w..A.....w...1......w
+w........w..........w
+w..1..wwwwww........w
+w...................w
+w..f...ss.....f.....w
+w......ss...........w
+wwwww...wwwwwwww.wwww
+w..........o........w
+w.................g.w
+wwwwwwwwwwwwwwwwwwwww`,
+    },
+  },
 };
