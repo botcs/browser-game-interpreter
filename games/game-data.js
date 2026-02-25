@@ -1664,20 +1664,20 @@ wwwwwwwwwwwwwwwwwwwww`,
     hotdog fluor > killSprite scoreChange=1
     fluor burger > killSprite
     burger fluor > killSprite scoreChange=1
-    
+
     fluor wall   > killSprite
 
 
     fullMolarInf hotdog > transformTo stype=deadMolarInf scoreChange=-1
-    hotdog deadMolarInf > killSprite 
+    hotdog deadMolarInf > killSprite
     fullMolarInf burger > transformTo stype=deadMolarInf scoreChange=-1
-    burger deadMolarInf > killSprite 
+    burger deadMolarInf > killSprite
     deadMolarInf avatar > transformTo stype=fullMolarInf scoreChange=1
-    
-    
+
+
     fullMolarSup hotdog > transformTo stype=deadMolarSup
     hotdog deadMolarSup > killSprite  scoreChange=-1
-    fullMolarSup burger > transformTo stype=deadMolarSup 
+    fullMolarSup burger > transformTo stype=deadMolarSup
     burger deadMolarSup > killSprite scoreChange=-1
     deadMolarSup avatar > transformTo stype=fullMolarSup scoreChange=1
 
@@ -2319,7 +2319,7 @@ wA..w...............w
 wwwwwwwwwwwwwwwwwwwww`,
     },
   },
-  "forge_vgfmri1": {
+  "forge_claude": {
     description: `BasicGame
     SpriteSet
         floor > Immovable img=colors/LIGHTGRAY
