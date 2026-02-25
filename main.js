@@ -360,6 +360,16 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// --- Mobile D-Pad ---
+document.querySelectorAll('.dpad-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    const action = btn.dataset.action;
+    lastKeyPressed = action;
+    doTick();
+  });
+});
+
 // --- Initialize ---
 buildLibrary();
 loadDefaultGame();

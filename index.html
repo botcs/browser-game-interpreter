@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VGDL Interpreter</title>
+  <title>BroGI - Browser Game Interpreter</title>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,6 +41,7 @@
     /* --- Game Box --- */
     .game-box {
       width: fit-content;
+      max-width: 100%;
       margin: 0 auto;
     }
 
@@ -55,6 +56,8 @@
       background: #000;
       outline: none;
       display: block;
+      max-width: 100%;
+      height: auto;
     }
     #game-canvas:focus {
       border-color: #333;
@@ -200,6 +203,57 @@
       text-align: center;
     }
 
+    /* --- Mobile D-Pad --- */
+    .dpad {
+      display: none;
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin: 10px auto 0;
+    }
+    .dpad-btn {
+      position: absolute;
+      width: 38px;
+      height: 38px;
+      background: rgba(0,0,0,0.15);
+      border: 1px solid rgba(0,0,0,0.2);
+      border-radius: 6px;
+      font-size: 18px;
+      color: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active {
+      background: rgba(0,0,0,0.3);
+    }
+    .dpad-up    { top: 0;   left: 41px; }
+    .dpad-down  { bottom: 0; left: 41px; }
+    .dpad-left  { top: 41px; left: 0; }
+    .dpad-right { top: 41px; right: 0; }
+    .dpad-space {
+      top: 41px;
+      left: 41px;
+      font-size: 11px;
+      font-family: 'EB Garamond', serif;
+    }
+
+    /* --- Mobile responsive --- */
+    @media (pointer: coarse) {
+      .help { display: none; }
+      .dpad { display: block; }
+    }
+
+    @media (max-width: 680px) {
+      .wrapper { padding: 10px; }
+      header h1 { font-size: 32px; }
+      header .subtitle { font-size: 15px; }
+    }
+
     /* --- Library Section --- */
     .library-section {
       border-top: 1.5px solid black;
@@ -282,8 +336,8 @@
 <body>
   <div class="wrapper">
     <header>
-      <h1>VGDL-JS</h1>
-      <div class="subtitle">Video Game Description Language -- Interactive Interpreter</div>
+      <h1><b>Bro</b>wser <b>G</b>ame <b>I</b>nterpreter</h1>
+      <div class="subtitle">for running Video Game Description Language environments</div>
     </header>
 
     <div class="game-box">
@@ -321,6 +375,14 @@
 
       <div class="help">
         Click canvas to focus | Arrow keys / WASD = move | Space = action | P = play/pause | Enter = load game
+      </div>
+
+      <div class="dpad" id="dpad">
+        <button class="dpad-btn dpad-up" data-action="UP">^</button>
+        <button class="dpad-btn dpad-left" data-action="LEFT">&lt;</button>
+        <button class="dpad-btn dpad-space" data-action="SPACE">act</button>
+        <button class="dpad-btn dpad-right" data-action="RIGHT">&gt;</button>
+        <button class="dpad-btn dpad-down" data-action="DOWN">v</button>
       </div>
     </div>
 
