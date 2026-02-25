@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Effect functions - port of src/vgdl/ontology/effects.py
 import { unitVector } from './constants.js';
 import { Resource } from './sprite.js';

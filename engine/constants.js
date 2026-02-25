@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Color definitions matching Python src/vgdl/ontology/constants.py
 export const GREEN = [0, 200, 0];
 export const BLUE = [0, 0, 200];

@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Canvas renderer for VGDL games
 // Draws colored rectangles on a grid, with resource bars on avatar
 

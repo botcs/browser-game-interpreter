@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Main UI glue: keyboard input, game loop, UI wiring
 import { setupRegistry } from './engine/setup-registry.js';
 import { VGDLParser } from './engine/parser.js';

@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Avatar sprite classes - port of src/vgdl/ontology/avatars.py
 import { VGDLSprite } from './sprite.js';
 import { OrientedSprite, SpriteProducer } from './sprites.js';

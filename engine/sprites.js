@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // NPC sprite subclasses - port of src/vgdl/ontology/sprites.py
 import { VGDLSprite, Resource } from './sprite.js';
 import { GRAY, RED, BLUE, BLACK, ORANGE, RIGHT, BASEDIRS } from './constants.js';

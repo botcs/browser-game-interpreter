@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // GridPhysics - port of src/vgdl/ontology/physics.py
 import { NOOP } from './action.js';
 import { vecEquals } from './constants.js';

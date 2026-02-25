@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Minimal test framework for browser
 let _suiteCount = 0;
 let _passCount = 0;

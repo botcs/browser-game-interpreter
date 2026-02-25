@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Register all sprite classes, effects, and terminations with the global registry
 // This mirrors Python's registry.register_all(ontology)
 

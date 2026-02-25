@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // VGDL Parser - port of src/vgdl/parser.py
 import { registry } from './registry.js';
 import { SpriteRegistry } from './sprite-registry.js';

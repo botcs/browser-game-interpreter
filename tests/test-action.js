@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 import { describe, it, assert, assertEqual } from './test-framework.js';
 import { Action, ACTION } from '../engine/action.js';
 

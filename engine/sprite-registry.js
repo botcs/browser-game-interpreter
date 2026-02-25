@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // SpriteRegistry - port of src/vgdl/core.py:22-200
 // Manages sprite class definitions and live/dead sprite instances.
 

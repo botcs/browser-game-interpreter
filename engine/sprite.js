@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // VGDLSprite base class - port of src/vgdl/core.py:1217+
 import { Rect } from './rect.js';
 import { GridPhysics } from './physics.js';

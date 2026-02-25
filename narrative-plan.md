@@ -1,4 +1,5 @@
 1. Do a self-playing demo, in which we show how an agent solves any arbitrary games.
+This needs a replay type of the game box into which we can load specific states of games.
 
 TODO:
 - figure out how to port the @src/llm_eval/replay.py to JS

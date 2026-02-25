@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // BasicGame and BasicGameLevel - port of src/vgdl/core.py:496-1200
 import { Rect } from './rect.js';
 import { Resource } from './sprite.js';

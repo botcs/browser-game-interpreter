@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 // Action class and ACTION enum
 // In Python, actions are based on pygame key codes. Here we use string keys.
 // The keys are just identifiers used for matching; the vector mapping is hardcoded.

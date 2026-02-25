@@ -1,3 +1,6 @@
+// developed and copyright by Botos Csaba (botos.official@gmail.com), 2026
+// Licensed under the MIT License. See LICENSE file for details.
+
 export const GAMES = {
   "avoidGeorge_vgfmri4": {
     description: `BasicGame
