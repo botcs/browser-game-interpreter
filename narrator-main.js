@@ -38,7 +38,11 @@ const libraryList = document.getElementById('library-list');
 const actionLogEl = document.getElementById('action-log');
 
 // Narrator DOM
-const btnNarrate = document.getElementById('btn-narrate');
+const btnGenerateDraft = document.getElementById('btn-generate-draft');
+const btnSendNarrate = document.getElementById('btn-send-narrate');
+const draftSection = document.getElementById('draft-section');
+const draftSystemPrompt = document.getElementById('draft-system-prompt');
+const draftUserMessage = document.getElementById('draft-user-message');
 const narrativePanel = document.getElementById('narrative-panel');
 const narrativeContent = document.getElementById('narrative-content');
 const narrativeLoading = document.getElementById('narrative-loading');
@@ -46,7 +50,6 @@ const apiKeyInput = document.getElementById('narrator-api-key');
 const modelInput = document.getElementById('narrator-model');
 const promptVariantSelect = document.getElementById('narrator-variant');
 const historyLimitInput = document.getElementById('narrator-history-limit');
-const lastPromptContent = document.getElementById('last-prompt-content');
 
 const renderer = new Renderer(canvas, 30);
 
@@ -396,14 +399,7 @@ function renderNarrativeResponse(text) {
   }
 }
 
-async function doNarrate() {
-  const apiKey = apiKeyInput.value.trim();
-  if (!apiKey) {
-    narrativeContent.innerHTML = '<div class="thought-section"><div class="content">Enter an OpenRouter API key in settings first.</div></div>';
-    narrativePanel.classList.add('visible');
-    return;
-  }
-
+function generateDraft() {
   if (!currentLevel) {
     narrativeContent.innerHTML = '<div class="thought-section"><div class="content">Load a game first.</div></div>';
     narrativePanel.classList.add('visible');
@@ -411,7 +407,6 @@ async function doNarrate() {
   }
 
   const variant = promptVariantSelect.value;
-  const model = modelInput.value.trim() || 'deepseek/deepseek-chat-v3-0324';
   const historyLimit = parseInt(historyLimitInput.value) || 50;
 
   // Build state text
@@ -426,19 +421,34 @@ async function doNarrate() {
     variant, actionHistory, stateText, lastAction, gameDesc.value, historyLimit
   );
 
-  // Show the prompt in the details panel
-  lastPromptContent.textContent = `--- SYSTEM ---\n${systemPrompt}\n\n--- USER ---\n${userMessage}`;
+  // Fill draft textareas and show the draft section
+  draftSystemPrompt.value = systemPrompt;
+  draftUserMessage.value = userMessage;
+  draftSection.classList.add('visible');
+}
+
+async function sendNarrate() {
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey) {
+    narrativeContent.innerHTML = '<div class="thought-section"><div class="content">Enter an OpenRouter API key in settings first.</div></div>';
+    narrativePanel.classList.add('visible');
+    return;
+  }
+
+  const model = modelInput.value.trim() || 'deepseek/deepseek-chat-v3-0324';
+  const systemPrompt = draftSystemPrompt.value;
+  const userMessage = draftUserMessage.value;
 
   // Show loading
   narrativePanel.classList.add('visible');
   narrativeLoading.style.display = 'block';
   narrativeContent.innerHTML = '';
-  btnNarrate.disabled = true;
+  btnSendNarrate.disabled = true;
 
-  // Call API
+  // Call API with the (possibly edited) prompts
   const response = await callNarrator(apiKey, model, systemPrompt, userMessage);
   narrativeLoading.style.display = 'none';
-  btnNarrate.disabled = false;
+  btnSendNarrate.disabled = false;
   renderNarrativeResponse(response);
 }
 
@@ -469,9 +479,13 @@ btnCog.addEventListener('click', (e) => {
   toggleSpeedPopover();
 });
 
-btnNarrate.addEventListener('click', (e) => {
+btnGenerateDraft.addEventListener('click', (e) => {
   e.stopPropagation();
-  doNarrate();
+  generateDraft();
+});
+btnSendNarrate.addEventListener('click', (e) => {
+  e.stopPropagation();
+  sendNarrate();
 });
 
 document.addEventListener('click', (e) => {

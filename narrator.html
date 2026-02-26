@@ -296,8 +296,8 @@
       width: 70px;
     }
 
-    /* Narrate button */
-    #btn-narrate {
+    /* Stage buttons */
+    .narrator-btn {
       font-family: 'EB Garamond', serif;
       font-size: 18px;
       padding: 8px 24px;
@@ -307,11 +307,44 @@
       cursor: pointer;
       align-self: flex-start;
     }
-    #btn-narrate:hover { background: #eee; }
-    #btn-narrate:disabled {
+    .narrator-btn:hover { background: #eee; }
+    .narrator-btn:disabled {
       opacity: 0.5;
       cursor: wait;
     }
+
+    /* Draft section */
+    .draft-section {
+      display: none;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px 12px;
+    }
+    .draft-section.visible { display: block; }
+    .draft-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .draft-section label:not(:first-child) {
+      margin-top: 10px;
+    }
+    .draft-section textarea {
+      width: 100%;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background: #f9f9f9;
+      padding: 6px 8px;
+      resize: vertical;
+      tab-size: 2;
+    }
+    #draft-system-prompt { height: 200px; }
+    #draft-user-message { height: 180px; }
 
     /* Narrative response panel */
     .narrative-panel {
@@ -520,10 +553,10 @@
             <div class="speed-popover" id="speed-popover">
               <label>Speed:
                 <select id="tick-mode">
-                  <option value="action">On keypress</option>
+                  <option value="action" selected>On keypress</option>
                   <option value="2">2 FPS</option>
                   <option value="4">4 FPS</option>
-                  <option value="7" selected>7 FPS</option>
+                  <option value="7">7 FPS</option>
                   <option value="10">10 FPS</option>
                   <option value="15">15 FPS</option>
                   <option value="30">30 FPS</option>
@@ -583,7 +616,15 @@
           </div>
         </details>
 
-        <button id="btn-narrate">Narrate</button>
+        <button class="narrator-btn" id="btn-generate-draft">Generate Prompt Draft</button>
+
+        <div class="draft-section" id="draft-section">
+          <label for="draft-system-prompt">System Prompt</label>
+          <textarea id="draft-system-prompt" spellcheck="false"></textarea>
+          <label for="draft-user-message">User Message</label>
+          <textarea id="draft-user-message" spellcheck="false"></textarea>
+          <button class="narrator-btn" id="btn-send-narrate" style="margin-top: 10px;">Send to LLM</button>
+        </div>
 
         <div class="narrative-loading" id="narrative-loading">Waiting for LLM response...</div>
 
@@ -591,11 +632,6 @@
           <h3>Narrative</h3>
           <div id="narrative-content"></div>
         </div>
-
-        <details class="prompt-details" id="prompt-details">
-          <summary>Last Prompt Sent</summary>
-          <div class="prompt-content" id="last-prompt-content">(click Narrate to see)</div>
-        </details>
       </div>
     </div>
 
