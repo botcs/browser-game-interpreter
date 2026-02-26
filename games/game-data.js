@@ -1947,39 +1947,38 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwww`,
         w > floor wall
 
     InteractionSet
-    avatar wall  > stepBack
-    goal avatar  > killIfOtherHasMore resource=key limit=1
-    monsterSlow sword > killSprite
-    monsterQuick sword > killSprite
-    monsterNormal sword > killSprite
-    monsterSlow sword > changeScore scoreChange=2
-    monsterQuick sword > changeScore scoreChange=2
-    monsterNormal sword > changeScore scoreChange=2
+        avatar wall > stepBack
+        goal avatar > killIfOtherHasMore resource=key limit=1
+        monsterSlow sword > killSprite
+        monsterQuick sword > killSprite
+        monsterNormal sword > killSprite
+        monsterSlow sword > changeScore scoreChange=2
+        monsterQuick sword > changeScore scoreChange=2
+        monsterNormal sword > changeScore scoreChange=2
 
-    monsterSlow monsterSlow > stepBack
-    monsterSlow monsterQuick > stepBack
-    monsterSlow monsterNormal > stepBack
-    monsterQuick monsterNormal > stepBack
-    monsterNormal monsterNormal > stepBack
-    monsterQuick monsterQuick > stepBack
+        monsterSlow monsterSlow > stepBack
+        monsterSlow monsterQuick > stepBack
+        monsterSlow monsterNormal > stepBack
+        monsterQuick monsterNormal > stepBack
+        monsterNormal monsterNormal > stepBack
+        monsterQuick monsterQuick > stepBack
 
-    avatar monsterSlow > killSprite
-    avatar monsterQuick > killSprite
-    avatar monsterNormal > killSprite
-    avatar monsterSlow > changeScore scoreChange=-1
-    avatar monsterQuick > changeScore scoreChange=-1
-    avatar monsterNormal > changeScore scoreChange=-1
+        avatar monsterSlow > killSprite
+        avatar monsterQuick > killSprite
+        avatar monsterNormal > killSprite
+        avatar monsterSlow > changeScore scoreChange=-1
+        avatar monsterQuick > changeScore scoreChange=-1
+        avatar monsterNormal > changeScore scoreChange=-1
 
-    avatar key   > changeResource resource=key value=1
-    avatar key   > changeScore scoreChange=5
-    key avatar    > killSprite
+        avatar key > changeResource resource=key value=1
+        avatar key > changeScore scoreChange=5
+        key avatar > killSprite
 
-    monsterQuick wall > stepBack
-    monsterNormal wall > stepBack
-    monsterSlow wall > stepBack
+        monsterQuick wall > stepBack
+        monsterNormal wall > stepBack
+        monsterSlow wall > stepBack
 
-
-
+        sword wall > killSprite
 
         floor EOS > killSprite
         goal EOS > killSprite
@@ -1992,9 +1991,9 @@ wwwwwwwwwwwwwwwwwwwwwwwwwwwwww`,
         wall EOS > killSprite
 
     TerminationSet
-    Timeout limit=150 win=False
-    SpriteCounter stype=goal   win=True
-    SpriteCounter stype=avatar win=False
+        SpriteCounter stype=goal win=True
+        SpriteCounter stype=avatar win=False
+        Timeout limit=400 win=False
 `,
     levels: {
       0: `wwwwwwwwwwwwwwwwwwwwwwwwwwwwww
