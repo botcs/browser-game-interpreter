@@ -753,19 +753,86 @@ function buildOraclePrompt(gameDescText) {
 
 You are an omniscient narrator who knows all the rules of this video game. You are watching a player discover these rules through trial and error, and you narrate their journey with full knowledge of what's really happening.
 
+## How to Read VGDL Game Descriptions
+
+The game description below is written in Video Game Description Language (VGDL). Here is how to interpret each section:
+
+### SpriteSet
+Defines every object type in the game. Format: \`name > Type parameters\`
+
+Avatar types (player-controlled):
+- MovingAvatar: can move in four directions
+- ShootAvatar: MovingAvatar that can also fire projectiles (stype=projectile_name) with space bar
+- FlakAvatar: can only move sideways, always shoots upward
+
+Object types:
+- Immovable: static object, cannot move
+- Passive: can be pushed by the avatar (via bounceForward interaction)
+- Resource: collectible object (collected via addResource/changeResource interactions)
+- ResourcePack: another collectible variant
+- Flicker: appears temporarily, disappears after a set number of steps (total=N)
+- SpawnPoint: periodically creates new objects (stype=what_it_spawns, prob=spawn_chance)
+- Missile: moves in one fixed direction at a set speed
+- Bomber: missile + spawner combined
+- Chaser: moves toward the nearest target object (stype=target)
+- RandomNPC: moves in random directions
+- Portal: teleports objects that touch it to an exit location (via teleportTo interaction)
+
+The \`img=colors/COLORNAME\` parameter sets the object's visible color. All objects of the same color follow the same rules.
+
+### LevelMapping
+Maps single characters to sprites for level layout. Format: \`char > sprite1 sprite2 ...\`
+Multiple sprites on one character means they overlap (e.g., \`w > floor wall\` places a wall on top of floor).
+
+### InteractionSet
+Defines collision rules. Format: \`spriteA spriteB > effect parameters\`
+
+CRITICAL: when spriteA and spriteB collide, the effect is applied TO spriteA (the first sprite).
+
+Effects:
+- killSprite: destroys spriteA (the first listed sprite)
+- stepBack: spriteA is pushed back (blocked), preventing overlap
+- bounceForward: spriteA is pushed in the direction spriteB was moving (i.e., spriteB pushes spriteA)
+- transformTo stype=X: spriteA transforms into object type X
+- changeScore scoreChange=N: awards N points when the collision happens
+- changeResource resource=R value=N: adds N to the avatar's resource R
+- addResource resource=R value=N: adds N of resource R to spriteA
+- removeResource resource=R value=N: removes N of resource R from spriteA
+- killIfOtherHasMore resource=R limit=N: kills spriteA only if spriteB has more than N of resource R
+- killIfHasLess resource=R limit=N: kills spriteA if it has less than N of resource R
+- teleportTo stype=X: teleports spriteA to the location of an X object
+- turnAround: spriteA (a missile) drops one cell and reverses direction
+- reverseDirection: spriteA (a missile) reverses its direction
+- undoAll: reverts spriteA's position to where it was before this tick
+
+Multiple effects can apply to the same collision (listed as separate lines).
+\`EOS\` (End of Screen) interactions handle objects leaving the game boundaries.
+
+### TerminationSet
+Defines win/lose conditions. Format: \`ConditionType parameters win=True/False\`
+- SpriteCounter stype=X limit=0 win=True: game is WON when all X objects are gone
+- SpriteCounter stype=X limit=0 win=False: game is LOST when all X objects are gone
+- MultiSpriteCounter stype1=X stype2=Y limit=0 win=True: won when all X and Y are gone
+- Timeout limit=N win=False: lost if N steps pass without winning
+- Survive limit=N win=True: won if avatar survives N steps
+
 ## Game Rules (VGDL Description)
+\`\`\`
 ${gameDescText}
+\`\`\`
 
 ## Critical Context
 - The player does NOT know these rules - they must discover them through trial and error
 - YOU know all the rules and can explain what is actually happening mechanically
 - Narrate from the perspective of someone who understands the game fully
 - Color determines behavior - all objects of the same color follow the same rules
+- The player sees colored squares on a grid, not the VGDL source code
 
-## What the Player Knows
-- They control an avatar on a grid
+## What the Player Sees
+- They control a colored avatar on a grid
 - Objects are identified by color (e.g., ORANGE, BROWN, GREEN)
-- They don't know the rules in advance
+- They see score changes displayed on screen
+- They do NOT see object type names, interaction rules, or win conditions
 
 ## Actions
 - \`UP\`, \`DOWN\`, \`LEFT\`, \`RIGHT\` - Move in that direction
