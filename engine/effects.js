@@ -35,6 +35,14 @@ export function transformTo(sprite, partner, game, { stype = 'wall' } = {}) {
   }
 }
 
+export function stepBackIfHasLess(sprite, partner, game, { resource, limit = 1, no_symmetry = false } = {}) {
+  if (sprite.resources[resource] < limit) {
+    stepBack(sprite, partner, game, { no_symmetry });
+  } else {
+    killSprite(partner, sprite, game);
+  }
+}
+
 export function stepBack(sprite, partner, game, { no_symmetry = false } = {}) {
   if (!game.kill_list.includes(partner) && !game.kill_list.includes(sprite)) {
     if (sprite.rect.equals(sprite.lastrect) && !no_symmetry) {
@@ -79,6 +87,23 @@ export function bounceForward(sprite, partner, game) {
     sprite.physics.activeMovement(sprite, unitVector(pushedDir));
     sprite.just_pushed = partner;
   }
+}
+
+export function catapultForward(sprite, partner, game) {
+  if (sprite.lastrect.colliderect(partner.rect)) return;
+  const direction = sprite.lastdirection;
+  const len = Math.abs(direction.x) + Math.abs(direction.y);
+  if (len === 0) return;
+  const dir = unitVector(direction);
+  const gridsize = sprite.rect.width;
+  const newRect = sprite.rect.copy();
+  newRect.x += Math.round(dir.x) * gridsize;
+  newRect.y += Math.round(dir.y) * gridsize;
+  if (newRect.x < 0 || newRect.y < 0
+      || newRect.x + newRect.width > game.screensize[0]
+      || newRect.y + newRect.height > game.screensize[1]) return;
+  sprite.rect = newRect;
+  sprite.lastmove = 0;
 }
 
 export function reverseDirection(sprite, partner, game, { with_step_back = true } = {}) {
@@ -198,6 +223,18 @@ export function teleportToExit(sprite, partner, game) {
     const e = exits[Math.floor(game.randomGenerator.random() * exits.length)];
     sprite.rect = e.rect.copy();
   }
+  sprite.lastmove = 0;
+}
+
+export function teleportToOther(sprite, partner, game) {
+  if (sprite.lastrect.colliderect(partner.rect)) return;
+  const siblings = game.sprite_registry.group(partner.key).filter(s => s !== partner);
+  if (siblings.length === 0) return;
+  const e = siblings[Math.floor(game.randomGenerator.random() * siblings.length)];
+  sprite.rect = e.rect.copy();
+  // Set lastrect to destination so the sibling portal's guard fires
+  // within the same _applyEffect loop (prevents ping-pong teleport)
+  sprite.lastrect = e.rect.copy();
   sprite.lastmove = 0;
 }
 

@@ -2,6 +2,141 @@
 // Licensed under the MIT License. See LICENSE file for details.
 
 export const GAMES = {
+      "roomworld": {
+    description: `BasicGame
+    SpriteSet
+        floor > Immovable img=colors/LIGHTGRAY
+        wall > Immovable img=colors/DARKGRAY
+        avatar > MovingAvatar img=colored_shapes/YELLOW_CIRCLE
+        goal > Immovable img=colored_shapes/LIGHTGREEN_STAR
+        key1 > Resource img=colored_shapes/ORANGE_DIAMOND limit=1
+        door1 > Immovable img=colored_shapes/ORANGE_SQUARE
+        key6 > Resource img=colored_shapes/BLUE_DIAMOND limit=1
+        door2 > Immovable img=colored_shapes/RED_SQUARE
+        teleporter > Immovable img=colored_shapes/PURPLE_HEXAGON
+        catapult > Immovable img=colored_shapes/PINK_TRIANGLE
+        t6 > Portal stype=t6 img=colored_shapes/PURPLE_HEXAGON
+        t3 > Immovable img=colored_shapes/GREEN_HEXAGON
+        key4 > Resource img=colored_shapes/GREEN_DIAMOND limit=1
+        c6 > Immovable img=colored_shapes/RED_TRIANGLE
+        door6 > Immovable img=colored_shapes/BLUE_SQUARE
+        tp4 > Portal stype=tp4 img=colored_shapes/ORANGE_HEXAGON
+
+    LevelMapping
+        . > floor
+        w > floor wall
+        A > floor avatar
+        x > floor goal
+        K > floor key1
+        D > floor door1
+        k > floor key6
+        d > floor door2
+        t > floor teleporter
+        c > floor catapult
+        T > floor t6
+        S > floor t3
+        e > floor key4
+        F > floor c6
+        G > floor door6
+        P > floor tp4
+
+    InteractionSet
+        avatar wall > stepBack
+        avatar door1 > stepBackIfHasLess resource=key1 limit=1
+        avatar door2 > stepBack
+        avatar door6 > stepBackIfHasLess resource=key6 limit=1
+
+        avatar catapult > catapultForward
+
+        avatar key1 > changeResource resource=key1 value=1
+        key1 avatar > killSprite
+
+        avatar key6 > changeResource resource=key6 value=1
+        key6 avatar > killSprite
+
+        avatar t6 > teleportToOther
+        avatar tp4 > teleportToOther
+
+        avatar key4 > changeResource resource=key4 value=1
+        key4 avatar > killSprite
+
+        goal avatar > killSprite
+
+        floor EOS > killSprite
+        wall EOS > killSprite
+        avatar EOS > killSprite
+        goal EOS > killSprite
+        key1 EOS > killSprite
+        door1 EOS > killSprite
+        key6 EOS > killSprite
+        door2 EOS > killSprite
+        teleporter EOS > killSprite
+        catapult EOS > killSprite
+        t6 EOS > killSprite
+        t3 EOS > killSprite
+        key4 EOS > killSprite
+        c6 EOS > killSprite
+        door6 EOS > killSprite
+        tp4 EOS > killSprite
+
+    TerminationSet
+        SpriteCounter stype=goal limit=0 win=True
+        Timeout limit=1500 win=False`,
+    levels: {
+      0: `wwwwwwwwwwwww
+w...w...D...w
+w...w.K.w.x.w
+w...wA..w...w
+wwwwwwwwwwwww
+w...w.t.w...w
+w...w...wc..w
+w..kw...w...w
+wwdwwwwwwwwww
+w...w...w...w
+w...w...w...w
+w...w...w...w
+wwwwwwwwwwwww`,
+      1: `wwwwwwwwwwwww
+w...w...w.F.w
+w...w...w...w
+w...w...w...w
+wwwwwwwwwwwww
+w...w..Tw...w
+w...w.A.w...w
+w...w...wS..w
+wwwwwwwwwwwww
+w...w.T.w...w
+w...w...w...w
+w.e.w.x.w.c.w
+wwwwwwwwwwwww`,
+      2: `wwwwwwwwwwwww
+w..Kw...w...w
+w...w...w...w
+w...w.t.w...w
+wwwwwwwwwwwww
+w...w.c.w...w
+w...w...w..Aw
+w...w...w.c.w
+wwwwwwwwwwwww
+w...w...w..xw
+w...wc..w...w
+w...w...w...w
+wwwwwwwwwwwww`,
+      3: `wwwwwwwwwwwww
+w..Pw...w...w
+w...w...wc..w
+w...w...w...w
+wwwwwwwwwwwDw
+w.c.G...w...w
+wt..wT..w...w
+w...wSAkwKT.w
+wwwwwwwwwwwww
+w...w...d...w
+w...w...w..xw
+we..w...wP..w
+wwwwwwwwwwwww`,
+    },
+  },
   "avoidGeorge_vgfmri4": {
     description: `BasicGame
     SpriteSet

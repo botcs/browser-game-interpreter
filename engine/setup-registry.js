@@ -15,11 +15,12 @@ import { VGDLSprite, Resource, Immutable } from './sprite.js';
 
 // Effects
 import { killSprite, killBoth, changeScore, cloneSprite, transformTo,
-         stepBack, undoAll, bounceForward, reverseDirection, turnAround,
+         stepBack, stepBackIfHasLess, undoAll, bounceForward, catapultForward,
+         reverseDirection, turnAround,
          flipDirection, wrapAround, collectResource, changeResource,
          addResource, removeResource, killIfOtherHasMore, killIfHasMore,
          killIfOtherHasLess, killIfHasLess, spawnIfHasMore, killIfAlive,
-         conveySprite, pullWithIt, teleportToExit, wallBounce,
+         conveySprite, pullWithIt, teleportToExit, teleportToOther, wallBounce,
          bounceDirection } from './effects.js';
 
 // Terminations
@@ -71,8 +72,10 @@ export function setupRegistry() {
   registry.register('cloneSprite', cloneSprite);
   registry.register('transformTo', transformTo);
   registry.register('stepBack', stepBack);
+  registry.register('stepBackIfHasLess', stepBackIfHasLess);
   registry.register('undoAll', undoAll);
   registry.register('bounceForward', bounceForward);
+  registry.register('catapultForward', catapultForward);
   registry.register('reverseDirection', reverseDirection);
   registry.register('turnAround', turnAround);
   registry.register('flipDirection', flipDirection);
@@ -90,6 +93,7 @@ export function setupRegistry() {
   registry.register('conveySprite', conveySprite);
   registry.register('pullWithIt', pullWithIt);
   registry.register('teleportToExit', teleportToExit);
+  registry.register('teleportToOther', teleportToOther);
   registry.register('wallBounce', wallBounce);
   registry.register('bounceDirection', bounceDirection);
 

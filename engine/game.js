@@ -314,7 +314,7 @@ export class BasicGameLevel {
     const ss = {};
 
     // Apply stepbacks
-    const stepbackEffects = this.domain.collision_eff.filter(e => e.name === 'stepBack');
+    const stepbackEffects = this.domain.collision_eff.filter(e => e.name === 'stepBack' || e.name === 'stepBackIfHasLess');
     for (const effect of stepbackEffects) {
       const [, events, eventKeys] = this._applyEffect(effect, ss);
       allEventsTriggered.push(...events);
@@ -345,7 +345,7 @@ export class BasicGameLevel {
     let allEventsTriggered = [];
     let allEventsTriggeredKeys = [];
     const nonMoveEffects = this.domain.collision_eff.filter(
-      e => !['stepBack', 'bounceForward', 'reverseDirection', 'turnAround'].includes(e.name)
+      e => !['stepBack', 'stepBackIfHasLess', 'bounceForward', 'reverseDirection', 'turnAround'].includes(e.name)
     );
 
     for (const effect of nonMoveEffects) {
