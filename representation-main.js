@@ -257,24 +257,20 @@ btnLoad.addEventListener('click', loadSelectedData);
 
 
 // ============================================================
-// Feature lookup: nearest-neighbor via behavioral_indices
+// Feature lookup helpers for RSA visualization
 // ============================================================
 
 /**
- * Find the feature vector for a given state index using binary search
- * on behavioral_indices. Returns the feature at the nearest index <= stepIndex,
- * or null if no feature covers this position.
+ * Count how many feature vectors have behavioral_indices[i] <= stepIndex.
+ * Uses binary search. Returns 0 if no features collected yet.
  */
-function findFeatureForStep(data, stepIndex) {
-  if (!data || !data.behavioral_indices || !data.features) return null;
+function collectFeaturesUpTo(data, stepIndex) {
+  if (!data || !data.behavioral_indices) return 0;
 
   const indices = data.behavioral_indices;
-  if (indices.length === 0) return null;
+  if (indices.length === 0 || stepIndex < indices[0]) return 0;
 
-  // If before the first feature point, no data yet
-  if (stepIndex < indices[0]) return null;
-
-  // Binary search for nearest index <= stepIndex
+  // Binary search for rightmost index <= stepIndex
   let lo = 0, hi = indices.length - 1;
   while (lo < hi) {
     const mid = (lo + hi + 1) >> 1;
@@ -284,7 +280,7 @@ function findFeatureForStep(data, stepIndex) {
       hi = mid - 1;
     }
   }
-  return data.features[lo];
+  return lo + 1; // count = index + 1
 }
 
 
@@ -613,72 +609,206 @@ function updatePanel(panelKey, stepIndex, data) {
 
   const cvs = panel.canvas;
   const ctx = cvs.getContext('2d');
+  const w = cvs.width;
+  const h = cvs.height;
 
-  // Use nearest-neighbor lookup via behavioral_indices
-  const stepFeatures = findFeatureForStep(data, stepIndex);
+  const count = collectFeaturesUpTo(data, stepIndex);
 
-  if (!stepFeatures) {
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
+  if (count === 0) {
+    ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = '#eee';
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-    ctx.fillStyle = '#999';
-    ctx.font = '13px "EB Garamond", serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('No data at state ' + stepIndex, cvs.width / 2, cvs.height / 2);
-    return;
-  }
-
-  drawFeatureHeatmap(ctx, cvs.width, cvs.height, stepFeatures, stepIndex);
-}
-
-
-function drawFeatureHeatmap(ctx, w, h, features, stepIndex) {
-  ctx.clearRect(0, 0, w, h);
-
-  if (!Array.isArray(features) || features.length === 0) {
-    ctx.fillStyle = '#f5f5f5';
     ctx.fillRect(0, 0, w, h);
     ctx.fillStyle = '#999';
     ctx.font = '13px "EB Garamond", serif';
     ctx.textAlign = 'center';
-    ctx.fillText('No features at state ' + stepIndex, w / 2, h / 2);
+    ctx.fillText('No data at state ' + stepIndex, w / 2, h / 2);
     return;
   }
 
-  // Find min/max for normalization
-  let min = Infinity, max = -Infinity;
-  for (const v of features) {
-    if (v < min) min = v;
-    if (v > max) max = v;
+  renderPanelRSA(ctx, w, h, data, count);
+}
+
+
+// ============================================================
+// Colormap helpers
+// ============================================================
+
+/**
+ * Diverging blue-white-red colormap.
+ * t in [0, 1]: 0 = blue, 0.5 = white, 1 = red.
+ * Returns [r, g, b] each in 0-255.
+ */
+function colormapDiverging(t) {
+  // Clamp
+  if (t < 0) t = 0;
+  if (t > 1) t = 1;
+  let r, g, b;
+  if (t < 0.5) {
+    // blue -> white
+    const s = t * 2; // 0..1
+    r = Math.round(s * 255);
+    g = Math.round(s * 255);
+    b = 255;
+  } else {
+    // white -> red
+    const s = (t - 0.5) * 2; // 0..1
+    r = 255;
+    g = Math.round((1 - s) * 255);
+    b = Math.round((1 - s) * 255);
   }
-  const range = max - min || 1;
+  return [r, g, b];
+}
 
-  // Determine grid layout
-  const n = features.length;
-  const cols = Math.ceil(Math.sqrt(n * (w / h)));
-  const rows = Math.ceil(n / cols);
-  const cellW = w / cols;
-  const cellH = h / rows;
 
-  for (let i = 0; i < n; i++) {
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    const norm = (features[i] - min) / range;
+// ============================================================
+// RSA L-shaped panel rendering
+// ============================================================
 
-    const r = Math.round(norm * 255);
-    const b = Math.round((1 - norm) * 255);
-    const g = Math.round(Math.min(norm, 1 - norm) * 2 * 128);
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(col * cellW, row * cellH, cellW + 0.5, cellH + 0.5);
-  }
+/**
+ * Render the L-shaped RSA layout on a single canvas:
+ *
+ *   [count label]  [feature-top: (dim x count) transposed]
+ *   [feature-left]  [RDM: count x count]
+ *
+ * Margin = 60px for the label/feature bars.
+ */
+function renderPanelRSA(ctx, w, h, data, count) {
+  const margin = 60;
+  const rdmW = w - margin;
+  const rdmH = h - margin;
 
-  // Step label overlay
-  ctx.fillStyle = 'rgba(255,255,255,0.7)';
-  ctx.fillRect(0, h - 18, 80, 18);
+  ctx.clearRect(0, 0, w, h);
+
+  // -- Top-left corner: count label --
+  ctx.fillStyle = '#f5f5f5';
+  ctx.fillRect(0, 0, margin, margin);
   ctx.fillStyle = '#333';
-  ctx.font = '11px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText('state ' + stepIndex, 4, h - 5);
+  ctx.font = 'bold 13px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('n=' + count, margin / 2, margin / 2);
+
+  // -- Compute feature min/max across collected features --
+  const features = data.features;
+  const dim = data.dim || (features[0] ? features[0].length : 0);
+  let fMin = Infinity, fMax = -Infinity;
+  for (let i = 0; i < count; i++) {
+    const row = features[i];
+    for (let j = 0; j < dim; j++) {
+      const v = row[j];
+      if (v < fMin) fMin = v;
+      if (v > fMax) fMax = v;
+    }
+  }
+  const fRange = fMax - fMin || 1;
+  const fMid = (fMin + fMax) / 2;
+  const fHalfRange = Math.max(fMax - fMid, fMid - fMin) || 1;
+
+  // -- Feature-top bar: above the RDM, dims as rows, time steps as columns --
+  // Region: x=[margin, w), y=[0, margin), size = rdmW x margin
+  // Data: for each column c in [0, count), row d in [0, dim): features[c][d]
+  if (rdmW > 0 && margin > 0) {
+    const imgTop = ctx.createImageData(rdmW, margin);
+    const dTop = imgTop.data;
+    for (let py = 0; py < margin; py++) {
+      // Which feature dimension does this row map to?
+      const d = Math.floor(py * dim / margin);
+      const dClamped = Math.min(d, dim - 1);
+      for (let px = 0; px < rdmW; px++) {
+        // Which time step does this column map to?
+        const c = Math.floor(px * count / rdmW);
+        const cClamped = Math.min(c, count - 1);
+        const val = features[cClamped][dClamped];
+        // Map to 0..1 using symmetric diverging scale around midpoint
+        const t = 0.5 + (val - fMid) / (2 * fHalfRange);
+        const [r, g, b] = colormapDiverging(t);
+        const idx = (py * rdmW + px) * 4;
+        dTop[idx] = r;
+        dTop[idx + 1] = g;
+        dTop[idx + 2] = b;
+        dTop[idx + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgTop, margin, 0);
+  }
+
+  // -- Feature-left bar: left of the RDM, time steps as rows, dims as columns --
+  // Region: x=[0, margin), y=[margin, h), size = margin x rdmH
+  // Data: for each row r in [0, count): features[r][d] across d in [0, dim)
+  if (margin > 0 && rdmH > 0) {
+    const imgLeft = ctx.createImageData(margin, rdmH);
+    const dLeft = imgLeft.data;
+    for (let py = 0; py < rdmH; py++) {
+      const r = Math.floor(py * count / rdmH);
+      const rClamped = Math.min(r, count - 1);
+      for (let px = 0; px < margin; px++) {
+        const d = Math.floor(px * dim / margin);
+        const dClamped = Math.min(d, dim - 1);
+        const val = features[rClamped][dClamped];
+        const t = 0.5 + (val - fMid) / (2 * fHalfRange);
+        const [cr, cg, cb] = colormapDiverging(t);
+        const idx = (py * margin + px) * 4;
+        dLeft[idx] = cr;
+        dLeft[idx + 1] = cg;
+        dLeft[idx + 2] = cb;
+        dLeft[idx + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgLeft, 0, margin);
+  }
+
+  // -- RDM center: count x count submatrix --
+  // Region: x=[margin, w), y=[margin, h), size = rdmW x rdmH
+  if (rdmW > 0 && rdmH > 0 && data.rdm) {
+    const rdm = data.rdm;
+
+    // Find actual min/max of the visible RDM submatrix for proper normalization.
+    // Theoretical range is 0-2, but real data often clusters in a narrow band.
+    let rdmMin = Infinity, rdmMax = -Infinity;
+    for (let i = 0; i < count; i++) {
+      for (let j = 0; j < count; j++) {
+        const v = rdm[i][j];
+        if (v < rdmMin) rdmMin = v;
+        if (v > rdmMax) rdmMax = v;
+      }
+    }
+    const rdmRange = rdmMax - rdmMin || 1;
+
+    const imgRdm = ctx.createImageData(rdmW, rdmH);
+    const dRdm = imgRdm.data;
+    for (let py = 0; py < rdmH; py++) {
+      const ri = Math.floor(py * count / rdmH);
+      const riC = Math.min(ri, count - 1);
+      for (let px = 0; px < rdmW; px++) {
+        const ci = Math.floor(px * count / rdmW);
+        const ciC = Math.min(ci, count - 1);
+        const val = rdm[riC][ciC];
+        // Normalize to actual data range: min -> 0 (blue), max -> 1 (red)
+        const t = (val - rdmMin) / rdmRange;
+        const [r, g, b] = colormapDiverging(t);
+        const idx = (py * rdmW + px) * 4;
+        dRdm[idx] = r;
+        dRdm[idx + 1] = g;
+        dRdm[idx + 2] = b;
+        dRdm[idx + 3] = 255;
+      }
+    }
+    ctx.putImageData(imgRdm, margin, margin);
+  }
+
+  // -- Separator lines --
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+  // Vertical line between left bar and RDM
+  ctx.beginPath();
+  ctx.moveTo(margin, 0);
+  ctx.lineTo(margin, h);
+  ctx.stroke();
+  // Horizontal line between top bar and RDM
+  ctx.beginPath();
+  ctx.moveTo(0, margin);
+  ctx.lineTo(w, margin);
+  ctx.stroke();
 }
 
 
