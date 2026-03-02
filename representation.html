@@ -193,34 +193,6 @@
       white-space: nowrap;
     }
 
-    /* Action log */
-    .action-log {
-      font-family: 'Courier New', monospace;
-      font-size: 12px;
-      max-height: 200px;
-      overflow-y: auto;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      padding: 6px;
-      background: #fafafa;
-    }
-    .action-log .log-entry {
-      padding: 1px 4px;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-    .action-log .log-entry.current-step {
-      background: #fff3b0;
-      font-weight: bold;
-    }
-    .action-log .log-separator {
-      border-top: 1px solid #ccc;
-      margin: 4px 0;
-      font-style: italic;
-      color: #888;
-      padding: 2px 4px;
-    }
-
     /* Right column - game info */
     .replay-right {
       display: flex;
@@ -423,6 +395,10 @@
             </div>
           </div>
 
+          <input type="range" id="step-scrubber" min="0" max="0" value="0">
+        </div>
+
+        <div class="replay-right">
           <div class="playback-controls">
             <button id="btn-step-back" title="Step back">&lt;</button>
             <button id="btn-play-pause" title="Play/Pause">Play</button>
@@ -438,20 +414,10 @@
             </select>
           </div>
 
-          <input type="range" id="step-scrubber" min="0" max="0" value="0">
-
           <div class="metadata-bar" id="metadata-bar">
             <span id="meta-game">Game: --</span>
             <span id="meta-subject">Subject: --</span>
             <span id="meta-outcome">Outcome: --</span>
-          </div>
-
-          <div class="action-log" id="action-log"></div>
-        </div>
-
-        <div class="replay-right">
-          <div class="flap-tabs" style="margin-top: 0;">
-            <!-- Placeholder for any right-column tabs or info -->
           </div>
 
           <div style="padding: 12px; border: 1px solid #ddd; border-radius: 6px;">

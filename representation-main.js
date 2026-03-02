@@ -95,7 +95,6 @@ const metaGame = document.getElementById('meta-game');
 const metaSubject = document.getElementById('meta-subject');
 const metaOutcome = document.getElementById('meta-outcome');
 
-const actionLogEl = document.getElementById('action-log');
 const trialInfo = document.getElementById('trial-info');
 const dataAvailability = document.getElementById('data-availability');
 
@@ -374,12 +373,39 @@ async function onVariantChange(panelKey) {
 }
 
 
-// Wire up variant change events
+// Wire up variant change events, keyboard navigation, and panel click-to-focus
 for (const key of Object.keys(panels)) {
   const sel = panels[key].variantSelect;
-  if (sel) {
-    sel.addEventListener('change', () => onVariantChange(key));
-  }
+  if (!sel) continue;
+
+  sel.addEventListener('change', () => onVariantChange(key));
+
+  // Clicking anywhere on the panel body focuses the variant selector
+  const panelBody = panels[key].canvas.parentElement;
+  panelBody.addEventListener('click', () => {
+    if (!sel.disabled) sel.focus();
+  });
+
+  // Explicit Up/Down keyboard cycling (native <select> behavior is
+  // inconsistent across browsers, especially on macOS)
+  sel.addEventListener('keydown', (e) => {
+    if (sel.disabled || sel.options.length <= 1) return;
+
+    let newIdx = sel.selectedIndex;
+    if (e.key === 'ArrowDown') {
+      newIdx = Math.min(sel.selectedIndex + 1, sel.options.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      newIdx = Math.max(sel.selectedIndex - 1, 0);
+    } else {
+      return;
+    }
+
+    e.preventDefault();
+    if (newIdx !== sel.selectedIndex) {
+      sel.selectedIndex = newIdx;
+      onVariantChange(key);
+    }
+  });
 }
 
 
@@ -448,9 +474,6 @@ function loadReplay(jsonObj, subject) {
   scrubber.min = 0;
   scrubber.max = replaySteps.length;
   scrubber.value = 0;
-
-  // Build action log
-  buildActionLog();
 
   // Game description flap
   const gameData = GAMES[gameName];
@@ -563,7 +586,6 @@ function goToStep(index) {
 
   // Update UI
   updateStepLabel();
-  updateActionLogHighlight();
   scrubber.value = index;
 
   // Update all representation panels
@@ -622,55 +644,6 @@ function updateStepLabel() {
     const att = step.attempt !== undefined ? step.attempt : '?';
     stepLabel.textContent = 'Step ' + (currentStepIndex + 1) + ' / ' + total +
       ' (L' + lvl + ' A' + att + ')';
-  }
-}
-
-
-function buildActionLog() {
-  actionLogEl.innerHTML = '';
-  let prevLevel = null;
-  let prevAttempt = null;
-
-  for (let i = 0; i < replaySteps.length; i++) {
-    const step = replaySteps[i];
-    const lvl = step.level;
-    const att = step.attempt;
-
-    if (lvl !== prevLevel || att !== prevAttempt) {
-      const sep = document.createElement('div');
-      sep.className = 'log-separator';
-      sep.textContent = '--- Level ' + lvl + ', Attempt ' + att + ' ---';
-      actionLogEl.appendChild(sep);
-      prevLevel = lvl;
-      prevAttempt = att;
-    }
-
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.dataset.index = i;
-    entry.textContent = step.action_log || ('[' + (i + 1) + '] ' + (step.action || '').toUpperCase());
-
-    if (step.won) entry.textContent += ' [WIN]';
-    if (step.lose) entry.textContent += ' [LOSE]';
-
-    entry.addEventListener('click', () => {
-      stopPlayback();
-      goToStep(i);
-    });
-    actionLogEl.appendChild(entry);
-  }
-}
-
-
-function updateActionLogHighlight() {
-  const entries = actionLogEl.querySelectorAll('.log-entry');
-  for (const entry of entries) {
-    const idx = Number(entry.dataset.index);
-    entry.classList.toggle('current-step', idx === currentStepIndex);
-  }
-  const current = actionLogEl.querySelector('.log-entry.current-step');
-  if (current) {
-    current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 }
 
