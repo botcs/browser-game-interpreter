@@ -318,6 +318,20 @@
       font-weight: normal;
       color: #999;
     }
+    .panel-variant-select {
+      font-family: 'EB Garamond', serif;
+      font-size: 12px;
+      padding: 1px 4px;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      background: white;
+      cursor: pointer;
+      max-width: 140px;
+    }
+    .panel-variant-select:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
 
     .panel-human .rep-panel-header { background: #f0f0ff; }
     .panel-ddqn .rep-panel-header { background: #f0fff0; }
@@ -465,6 +479,9 @@
         <div class="rep-panel panel-human" id="panel-human">
           <div class="rep-panel-header">
             Human fMRI
+            <select class="panel-variant-select" id="variant-human_fmri" disabled>
+              <option value="">--</option>
+            </select>
             <span class="panel-status" id="panel-human-status">no data</span>
           </div>
           <div class="rep-panel-body">
@@ -473,7 +490,8 @@
           </div>
         </div>
 
-        <div class="rep-panel panel-ddqn" id="panel-ddqn">
+        <!-- DEV: DDQN and EfficientZero panels temporarily disabled -->
+        <div class="rep-panel panel-ddqn" id="panel-ddqn" style="display:none">
           <div class="rep-panel-header">
             DDQN (Model-Free)
             <span class="panel-status" id="panel-ddqn-status">no data</span>
@@ -484,7 +502,7 @@
           </div>
         </div>
 
-        <div class="rep-panel panel-ez" id="panel-ez">
+        <div class="rep-panel panel-ez" id="panel-ez" style="display:none">
           <div class="rep-panel-header">
             EfficientZero (Model-Based)
             <span class="panel-status" id="panel-ez-status">no data</span>
@@ -498,6 +516,9 @@
         <div class="rep-panel panel-deepseek" id="panel-deepseek">
           <div class="rep-panel-header">
             DeepSeek R1-Distill (LLM)
+            <select class="panel-variant-select" id="variant-deepseek" disabled>
+              <option value="">--</option>
+            </select>
             <span class="panel-status" id="panel-deepseek-status">no data</span>
           </div>
           <div class="rep-panel-body">

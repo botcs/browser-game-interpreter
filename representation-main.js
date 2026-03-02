@@ -24,8 +24,23 @@ setupRegistry();
 //         "bait_vgfmri4": {
 //           "replay": "sub-13/bait_vgfmri4_sub-13.replay.json.gz",
 //           "features": {
-//             "human_fmri": "sub-13/bait_vgfmri4_fmri.json",
-//             "deepseek": "sub-13/bait_vgfmri4_deepseek.json"
+//             "human_fmri": {                          // object = has variants
+//               "default": "sub-13/bait_vgfmri4_fmri.json",
+//               "variants": {
+//                 "whole_brain": "sub-13/bait_vgfmri4_fmri.json",
+//                 "AG": "sub-13/bait_vgfmri4_fmri_roi_AG.json",
+//                 ...
+//               }
+//             },
+//             "deepseek": {
+//               "default": "sub-13/bait_vgfmri4_deepseek.json",
+//               "variants": {
+//                 "layer_27": "sub-13/bait_vgfmri4_deepseek.json",
+//                 "layer_0": "sub-13/bait_vgfmri4_deepseek_layer_0.json",
+//                 ...
+//               }
+//             },
+//             "ez": "sub-13/bait_vgfmri4_ez.json"     // string = no variants
 //           }
 //         }
 //       }
@@ -97,23 +112,30 @@ const panels = {
     canvas: document.getElementById('canvas-human'),
     status: document.getElementById('panel-human-status'),
     placeholder: document.getElementById('placeholder-human'),
+    variantSelect: document.getElementById('variant-human_fmri'),
   },
   ddqn: {
     canvas: document.getElementById('canvas-ddqn'),
     status: document.getElementById('panel-ddqn-status'),
     placeholder: document.getElementById('placeholder-ddqn'),
+    variantSelect: null,
   },
   ez: {
     canvas: document.getElementById('canvas-ez'),
     status: document.getElementById('panel-ez-status'),
     placeholder: document.getElementById('placeholder-ez'),
+    variantSelect: null,
   },
   deepseek: {
     canvas: document.getElementById('canvas-deepseek'),
     status: document.getElementById('panel-deepseek-status'),
     placeholder: document.getElementById('placeholder-deepseek'),
+    variantSelect: document.getElementById('variant-deepseek'),
   },
 };
+
+// Currently loaded game entry from manifest (needed for variant switching)
+let currentGameEntry = null;
 
 // ============================================================
 // Flap tabs
@@ -229,12 +251,19 @@ async function loadSelectedData() {
     replayJson = await resp.json();
   }
 
+  // Store game entry for variant switching
+  currentGameEntry = gameEntry;
+
   // Load feature data in parallel
+  // Feature entries can be a plain string path or {default, variants} object.
   loadStatus.textContent = 'Loading features...';
   const featureKeys = ['human_fmri', 'ddqn', 'ez', 'deepseek'];
   const featurePromises = featureKeys.map(async (key) => {
     if (!gameEntry.features || !gameEntry.features[key]) return null;
-    const path = gameEntry.features[key];
+    const entry = gameEntry.features[key];
+    // Resolve the default path: string = direct path, object = entry.default
+    const path = (typeof entry === 'string') ? entry : entry.default;
+    if (!path) return null;
     const url = `${DATA_BASE}/${path}`;
     const r = await fetch(url);
     if (!r.ok) return null;
@@ -246,6 +275,9 @@ async function loadSelectedData() {
     featureData[featureKeys[i]] = featureResults[i];
   }
 
+  // Populate variant dropdowns
+  populateVariantDropdowns(gameEntry);
+
   loadStatus.textContent = '';
   btnLoad.disabled = false;
 
@@ -254,6 +286,101 @@ async function loadSelectedData() {
 }
 
 btnLoad.addEventListener('click', loadSelectedData);
+
+
+// ============================================================
+// Variant dropdown logic
+// ============================================================
+
+/**
+ * Populate variant <select> dropdowns from the manifest's feature entries.
+ * If a feature entry has a 'variants' dict, populate and enable the dropdown.
+ * Otherwise, reset to single "--" option and disable.
+ */
+function populateVariantDropdowns(gameEntry) {
+  for (const key of Object.keys(panels)) {
+    const panel = panels[key];
+    const sel = panel.variantSelect;
+    if (!sel) continue;
+
+    sel.innerHTML = '<option value="">--</option>';
+    sel.disabled = true;
+
+    if (!gameEntry.features || !gameEntry.features[key]) continue;
+    const entry = gameEntry.features[key];
+    if (typeof entry === 'string' || !entry.variants) continue;
+
+    const variants = entry.variants;
+    const variantNames = Object.keys(variants);
+    if (variantNames.length <= 1) continue;
+
+    // Find which variant name corresponds to the default path
+    const defaultPath = entry.default;
+    let defaultVariant = variantNames[0];
+    for (const name of variantNames) {
+      if (variants[name] === defaultPath) {
+        defaultVariant = name;
+        break;
+      }
+    }
+
+    sel.innerHTML = '';
+    for (const name of variantNames) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      if (name === defaultVariant) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    sel.disabled = false;
+  }
+}
+
+
+/**
+ * Handle variant dropdown change: fetch the selected variant's JSON,
+ * replace featureData for that panel, and re-render.
+ */
+async function onVariantChange(panelKey) {
+  const panel = panels[panelKey];
+  const sel = panel.variantSelect;
+  if (!sel || !currentGameEntry) return;
+
+  const entry = currentGameEntry.features[panelKey];
+  if (!entry || typeof entry === 'string' || !entry.variants) return;
+
+  const variantName = sel.value;
+  if (!variantName) return;
+
+  const path = entry.variants[variantName];
+  if (!path) return;
+
+  // Show loading state
+  panel.status.textContent = 'loading...';
+  panel.status.style.color = '#888';
+
+  const url = `${DATA_BASE}/${path}`;
+  const resp = await fetch(url);
+  if (!resp.ok) {
+    panel.status.textContent = 'load failed';
+    panel.status.style.color = '#c44';
+    return;
+  }
+
+  featureData[panelKey] = await resp.json();
+  updatePanelStatuses();
+  updateDataAvailability();
+  updateAllPanels(currentStepIndex);
+}
+
+
+// Wire up variant change events
+for (const key of Object.keys(panels)) {
+  const sel = panels[key].variantSelect;
+  if (sel) {
+    sel.addEventListener('change', () => onVariantChange(key));
+  }
+}
 
 
 // ============================================================
@@ -634,6 +761,36 @@ function updatePanel(panelKey, stepIndex, data) {
 // ============================================================
 
 /**
+ * Viridis colormap (perceptually uniform, dark purple -> teal -> yellow).
+ * t in [0, 1]. Returns [r, g, b] each in 0-255.
+ */
+function colormapViridis(t) {
+  if (t < 0) t = 0;
+  if (t > 1) t = 1;
+  // Control points sampled from the matplotlib viridis colormap
+  const stops = [
+    [0.0,  68,   1,  84],
+    [0.25, 59,  82, 139],
+    [0.5,  33, 145, 140],
+    [0.75, 94, 201,  98],
+    [1.0, 253, 231,  37],
+  ];
+  // Find the two surrounding stops
+  let lo = 0;
+  for (let i = 1; i < stops.length; i++) {
+    if (stops[i][0] <= t) lo = i;
+  }
+  if (lo === stops.length - 1) return [stops[lo][1], stops[lo][2], stops[lo][3]];
+  const hi = lo + 1;
+  const f = (t - stops[lo][0]) / (stops[hi][0] - stops[lo][0]);
+  return [
+    Math.round(stops[lo][1] + f * (stops[hi][1] - stops[lo][1])),
+    Math.round(stops[lo][2] + f * (stops[hi][2] - stops[lo][2])),
+    Math.round(stops[lo][3] + f * (stops[hi][3] - stops[lo][3])),
+  ];
+}
+
+/**
  * Diverging blue-white-red colormap.
  * t in [0, 1]: 0 = blue, 0.5 = white, 1 = red.
  * Returns [r, g, b] each in 0-255.
@@ -701,8 +858,6 @@ function renderPanelRSA(ctx, w, h, data, count) {
     }
   }
   const fRange = fMax - fMin || 1;
-  const fMid = (fMin + fMax) / 2;
-  const fHalfRange = Math.max(fMax - fMid, fMid - fMin) || 1;
 
   // -- Feature-top bar: above the RDM, dims as rows, time steps as columns --
   // Region: x=[margin, w), y=[0, margin), size = rdmW x margin
@@ -719,9 +874,8 @@ function renderPanelRSA(ctx, w, h, data, count) {
         const c = Math.floor(px * count / rdmW);
         const cClamped = Math.min(c, count - 1);
         const val = features[cClamped][dClamped];
-        // Map to 0..1 using symmetric diverging scale around midpoint
-        const t = 0.5 + (val - fMid) / (2 * fHalfRange);
-        const [r, g, b] = colormapDiverging(t);
+        const t = (val - fMin) / fRange;
+        const [r, g, b] = colormapViridis(t);
         const idx = (py * rdmW + px) * 4;
         dTop[idx] = r;
         dTop[idx + 1] = g;
@@ -745,8 +899,8 @@ function renderPanelRSA(ctx, w, h, data, count) {
         const d = Math.floor(px * dim / margin);
         const dClamped = Math.min(d, dim - 1);
         const val = features[rClamped][dClamped];
-        const t = 0.5 + (val - fMid) / (2 * fHalfRange);
-        const [cr, cg, cb] = colormapDiverging(t);
+        const t = (val - fMin) / fRange;
+        const [cr, cg, cb] = colormapViridis(t);
         const idx = (py * margin + px) * 4;
         dLeft[idx] = cr;
         dLeft[idx + 1] = cg;
