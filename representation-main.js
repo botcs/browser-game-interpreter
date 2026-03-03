@@ -895,6 +895,7 @@ function renderPanelRSA(ctx, w, h, data, count) {
     for (let i = 0; i < count; i++) {
       for (let j = 0; j < count; j++) {
         const v = rdm[i][j];
+        if (v == null) continue;  // skip diagonal (null)
         if (v < rdmMin) rdmMin = v;
         if (v > rdmMax) rdmMax = v;
       }
@@ -910,10 +911,18 @@ function renderPanelRSA(ctx, w, h, data, count) {
         const ci = Math.floor(px * count / rdmW);
         const ciC = Math.min(ci, count - 1);
         const val = rdm[riC][ciC];
+        const idx = (py * rdmW + px) * 4;
+        if (val == null) {
+          // Diagonal: render as mid-gray
+          dRdm[idx] = 128;
+          dRdm[idx + 1] = 128;
+          dRdm[idx + 2] = 128;
+          dRdm[idx + 3] = 255;
+          continue;
+        }
         // Normalize to actual data range: min -> 0 (blue), max -> 1 (red)
         const t = (val - rdmMin) / rdmRange;
         const [r, g, b] = colormapDiverging(t);
-        const idx = (py * rdmW + px) * 4;
         dRdm[idx] = r;
         dRdm[idx + 1] = g;
         dRdm[idx + 2] = b;
