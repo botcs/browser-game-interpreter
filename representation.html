@@ -330,6 +330,54 @@
       text-align: center;
     }
 
+    /* Brain ROI diagram */
+    .brain-roi-container {
+      flex-shrink: 0;
+      width: 180px;
+      text-align: center;
+    }
+    .brain-roi-container img {
+      width: 180px;
+      height: auto;
+    }
+    .brain-roi-label {
+      font-size: 11px;
+      color: #666;
+      margin-top: 2px;
+    }
+    .panel-human .rep-panel-body,
+    .panel-deepseek .rep-panel-body {
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    /* DeepSeek layer diagram */
+    .layer-diagram-container {
+      flex-shrink: 0;
+      width: 48px;
+      text-align: center;
+    }
+    .layer-diagram {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+    .layer-block {
+      width: 48px;
+      height: 5px;
+      border-radius: 2px;
+      background: #ddd;
+      transition: background 0.15s;
+    }
+    .layer-block.active {
+      background: #e8a838;
+    }
+    .layer-diagram-label {
+      font-size: 10px;
+      color: #666;
+      margin-top: 3px;
+    }
+
     /* Help bar */
     .help-bar {
       font-size: 13px;
@@ -451,6 +499,10 @@
             <span class="panel-status" id="panel-human-status">no data</span>
           </div>
           <div class="rep-panel-body">
+            <div class="brain-roi-container" id="brain-roi-container" style="display:none">
+              <img id="brain-roi-img" src="" alt="Brain ROI">
+              <div class="brain-roi-label" id="brain-roi-label">--</div>
+            </div>
             <canvas id="canvas-human" width="400" height="400"></canvas>
             <div class="panel-placeholder" id="placeholder-human">Load data to view</div>
           </div>
@@ -488,6 +540,10 @@
             <span class="panel-status" id="panel-deepseek-status">no data</span>
           </div>
           <div class="rep-panel-body">
+            <div class="layer-diagram-container" id="layer-diagram-container" style="display:none">
+              <div class="layer-diagram" id="layer-diagram"></div>
+              <div class="layer-diagram-label" id="layer-diagram-label">--</div>
+            </div>
             <canvas id="canvas-deepseek" width="400" height="400"></canvas>
             <div class="panel-placeholder" id="placeholder-deepseek">Load data to view</div>
           </div>

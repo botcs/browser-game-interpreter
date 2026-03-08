@@ -49,6 +49,36 @@ setupRegistry();
 // }
 
 const DATA_BASE = './data/representation';
+const BRAIN_ROI_BASE_URL = 'data/representation/brain_roi';
+
+const ROI_FULL_NAMES = {
+  'AG': 'Angular Gyrus',
+  'CAL': 'Calcarine Sulcus',
+  'Caudate': 'Caudate Nucleus',
+  'Cerebellum': 'Cerebellum',
+  'CUN': 'Cuneus',
+  'dStriatum': 'Dorsal Striatum',
+  'FFG': 'Fusiform Gyrus',
+  'IFGoperc': 'Inf. Frontal Gyrus (opercular)',
+  'IFGtriang': 'Inf. Frontal Gyrus (triangular)',
+  'IOG': 'Inferior Occipital Gyrus',
+  'IPG': 'Inferior Parietal Gyrus',
+  'LING': 'Lingual Gyrus',
+  'MFG': 'Middle Frontal Gyrus',
+  'MOG': 'Middle Occipital Gyrus',
+  'MTG': 'Middle Temporal Gyrus',
+  'OFC': 'Orbitofrontal Cortex',
+  'PCUN': 'Precuneus',
+  'PoCG': 'Postcentral Gyrus',
+  'PreCG': 'Precentral Gyrus',
+  'Putamen': 'Putamen',
+  'ROL': 'Rolandic Operculum',
+  'SFG': 'Superior Frontal Gyrus',
+  'SMA': 'Supplementary Motor Area',
+  'SMG': 'Supramarginal Gyrus',
+  'SOG': 'Superior Occipital Gyrus',
+  'whole_brain': 'Whole Brain (all ROIs)',
+};
 
 // ============================================================
 // State
@@ -132,6 +162,17 @@ const panels = {
     variantSelect: document.getElementById('variant-deepseek'),
   },
 };
+
+// Brain ROI diagram elements
+const brainRoiContainer = document.getElementById('brain-roi-container');
+const brainRoiImg = document.getElementById('brain-roi-img');
+const brainRoiLabel = document.getElementById('brain-roi-label');
+
+// DeepSeek layer diagram elements
+const layerDiagramContainer = document.getElementById('layer-diagram-container');
+const layerDiagram = document.getElementById('layer-diagram');
+const layerDiagramLabel = document.getElementById('layer-diagram-label');
+const DEEPSEEK_NUM_BLOCKS = 64;
 
 // Currently loaded game entry from manifest (needed for variant switching)
 let currentGameEntry = null;
@@ -261,7 +302,13 @@ async function loadSelectedData() {
     if (!gameEntry.features || !gameEntry.features[key]) return null;
     const entry = gameEntry.features[key];
     // Resolve the default path: string = direct path, object = entry.default
-    const path = (typeof entry === 'string') ? entry : entry.default;
+    // For DeepSeek, prefer layer_01 over the manifest default
+    let path;
+    if (key === 'deepseek' && typeof entry === 'object' && entry.variants && entry.variants['layer_01']) {
+      path = entry.variants['layer_01'];
+    } else {
+      path = (typeof entry === 'string') ? entry : entry.default;
+    }
     if (!path) return null;
     const url = `${DATA_BASE}/${path}`;
     const r = await fetch(url);
@@ -316,10 +363,14 @@ function populateVariantDropdowns(gameEntry) {
     // Find which variant name corresponds to the default path
     const defaultPath = entry.default;
     let defaultVariant = variantNames[0];
-    for (const name of variantNames) {
-      if (variants[name] === defaultPath) {
-        defaultVariant = name;
-        break;
+    if (key === 'deepseek' && variantNames.includes('layer_01')) {
+      defaultVariant = 'layer_01';
+    } else {
+      for (const name of variantNames) {
+        if (variants[name] === defaultPath) {
+          defaultVariant = name;
+          break;
+        }
       }
     }
 
@@ -332,6 +383,73 @@ function populateVariantDropdowns(gameEntry) {
       sel.appendChild(opt);
     }
     sel.disabled = false;
+  }
+
+  // Show/hide brain ROI diagram based on human_fmri variant availability
+  const fmriSel = panels.human_fmri.variantSelect;
+  if (fmriSel && !fmriSel.disabled && fmriSel.value) {
+    brainRoiContainer.style.display = '';
+    updateBrainROI(fmriSel.value);
+  } else {
+    brainRoiContainer.style.display = 'none';
+  }
+
+  // Show/hide DeepSeek layer diagram based on variant availability
+  const dsSel = panels.deepseek.variantSelect;
+  if (dsSel && !dsSel.disabled && dsSel.value) {
+    layerDiagramContainer.style.display = '';
+    updateLayerDiagram(dsSel.value);
+  } else {
+    layerDiagramContainer.style.display = 'none';
+  }
+}
+
+
+/**
+ * Update the brain ROI diagram to show the given ROI.
+ * If roiName is empty/null, shows the base brain or hides the container.
+ */
+function updateBrainROI(roiName) {
+  if (!roiName) {
+    brainRoiImg.src = `${BRAIN_ROI_BASE_URL}/brain_base.svg`;
+    brainRoiLabel.textContent = '--';
+    return;
+  }
+  brainRoiImg.src = `${BRAIN_ROI_BASE_URL}/brain_${roiName}.svg`;
+  brainRoiLabel.textContent = ROI_FULL_NAMES[roiName] || roiName;
+}
+
+
+/**
+ * Build (once) or update the DeepSeek layer diagram.
+ * variantName is like "layer_00", "layer_27", "layer_64".
+ */
+function updateLayerDiagram(variantName) {
+  // Build blocks on first call
+  if (layerDiagram.children.length === 0) {
+    for (let i = 0; i <= DEEPSEEK_NUM_BLOCKS; i++) {
+      const block = document.createElement('div');
+      block.className = 'layer-block';
+      block.dataset.layer = i;
+      layerDiagram.appendChild(block);
+    }
+  }
+
+  // Parse layer index from variant name (e.g. "layer_27" -> 27)
+  const match = variantName ? variantName.match(/layer_(\d+)/) : null;
+  const activeLayer = match ? parseInt(match[1], 10) : -1;
+
+  for (const block of layerDiagram.children) {
+    const idx = parseInt(block.dataset.layer, 10);
+    block.classList.toggle('active', idx === activeLayer);
+  }
+
+  if (activeLayer >= 0) {
+    const desc = activeLayer === DEEPSEEK_NUM_BLOCKS
+      ? `Layer ${activeLayer} (output)` : `Layer ${activeLayer}`;
+    layerDiagramLabel.textContent = desc;
+  } else {
+    layerDiagramLabel.textContent = '--';
   }
 }
 
@@ -370,6 +488,15 @@ async function onVariantChange(panelKey) {
   updatePanelStatuses();
   updateDataAvailability();
   updateAllPanels(currentStepIndex);
+
+  // Update brain ROI diagram when fMRI variant changes
+  if (panelKey === 'human_fmri') {
+    updateBrainROI(variantName);
+  }
+  // Update layer diagram when DeepSeek variant changes
+  if (panelKey === 'deepseek') {
+    updateLayerDiagram(variantName);
+  }
 }
 
 
