@@ -532,6 +532,152 @@
       header h1 { font-size: 32px; }
       header .subtitle { font-size: 15px; }
     }
+
+    /* --- Replay mode --- */
+
+    /* Visibility toggles */
+    .replay-only { display: none !important; }
+    .wrapper.replay-mode .replay-only { display: block !important; }
+    .wrapper.replay-mode .replay-only.playback-controls { display: flex !important; }
+    .wrapper.replay-mode .replay-only.comparison-container { display: grid !important; }
+    .wrapper.replay-mode .replay-only.metadata-bar { display: flex !important; }
+    .wrapper.replay-mode .interactive-only { display: none !important; }
+    .wrapper.replay-mode .replay-drop-zone { display: none !important; }
+
+    /* Replay drop zone */
+    .replay-drop-zone {
+      border: 2px dashed #aaa;
+      border-radius: 6px;
+      padding: 10px 14px;
+      text-align: center;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .replay-drop-zone:hover,
+    .replay-drop-zone.dragover {
+      border-color: #333;
+      background: #f8f8f8;
+      color: #555;
+    }
+    .replay-drop-zone input[type="file"] { display: none; }
+
+    /* Playback controls */
+    .playback-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .playback-controls button {
+      font-family: 'EB Garamond', serif;
+      font-size: 16px;
+      padding: 4px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+    .playback-controls button:hover { background: #eee; }
+    .step-label {
+      font-size: 15px;
+      color: #333;
+      min-width: 120px;
+      text-align: center;
+    }
+    .playback-controls select {
+      font-family: 'EB Garamond', serif;
+      font-size: 14px;
+      padding: 2px 6px;
+      border: 1px solid #999;
+      background: #eee;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #btn-close-replay {
+      margin-left: auto;
+      font-weight: bold;
+      color: #888;
+    }
+    #step-scrubber {
+      width: 100%;
+      min-width: 0;
+      margin: 0;
+      display: block;
+    }
+
+    /* Metadata bar */
+    .metadata-bar {
+      font-size: 14px;
+      color: #555;
+      display: flex;
+      gap: 15px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .metadata-bar span { white-space: nowrap; }
+
+    /* Comparison container: side-by-side */
+    .comparison-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Blue agent panel */
+    .agent-panel {
+      border: 1px solid #4a7ab5;
+      border-radius: 6px;
+      padding: 12px;
+      background: #f0f4fa;
+    }
+    .agent-panel h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #2c5282;
+      border-bottom: 1px solid #c5d5ea;
+      padding-bottom: 4px;
+    }
+    .agent-panel .label { color: #2c5282; }
+
+    /* Purple narrator panel */
+    .narrator-panel-colored {
+      border: 1px solid #7b5ea7;
+      border-radius: 6px;
+      padding: 12px;
+      background: #f5f0fa;
+    }
+    .narrator-panel-colored h3 {
+      font-size: 16px;
+      margin-bottom: 6px;
+      color: #5b3a8c;
+      border-bottom: 1px solid #d5c5ea;
+      padding-bottom: 4px;
+    }
+    .narrator-panel-colored .label { color: #5b3a8c; }
+
+    /* Current-step highlight in action log (replay mode) */
+    .action-log .log-entry.current-step {
+      background: #fff3b0;
+      font-weight: bold;
+    }
+    .action-log .log-entry[data-index] {
+      cursor: pointer;
+    }
+    .action-log .log-separator {
+      border-top: 1px solid #ccc;
+      margin: 4px 0;
+      font-style: italic;
+      color: #888;
+      padding: 2px 4px;
+    }
+
+    /* Responsive: stack comparison on narrow screens */
+    @media (max-width: 900px) {
+      .comparison-container {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -578,8 +724,40 @@
           </div>
         </div>
 
-        <div class="help">
+        <div class="help interactive-only">
           Arrow keys / WASD = move | Space = action | P = play/pause | Enter = load game
+        </div>
+
+        <div class="replay-drop-zone" id="replay-drop-zone">
+          <span>Drop a .replay.json.gz here or click to load a replay</span>
+          <input type="file" id="replay-file-input" accept=".json,.gz,.json.gz">
+        </div>
+
+        <div class="help replay-only">
+          Left/Right = step | Space = play/pause | Home/End = jump | Esc = close replay
+        </div>
+
+        <div class="playback-controls replay-only" id="playback-controls">
+          <button id="btn-step-back" title="Step back">&lt;</button>
+          <button id="btn-play-pause" title="Play/Pause">Play</button>
+          <button id="btn-step-fwd" title="Step forward">&gt;</button>
+          <span class="step-label" id="step-label">Step 0 / 0</span>
+          <select id="replay-speed-select">
+            <option value="1">1 sps</option>
+            <option value="2" selected>2 sps</option>
+            <option value="4">4 sps</option>
+            <option value="7">7 sps</option>
+            <option value="10">10 sps</option>
+            <option value="20">20 sps</option>
+          </select>
+          <button id="btn-close-replay" title="Close replay">X</button>
+        </div>
+        <input type="range" class="replay-only" id="step-scrubber" min="0" max="0" value="0">
+
+        <div class="metadata-bar replay-only" id="metadata-bar">
+          <span id="meta-game">Game: --</span>
+          <span id="meta-model">Model: --</span>
+          <span id="meta-outcome">Outcome: --</span>
         </div>
 
         <div class="action-log" id="action-log"></div>
@@ -628,10 +806,41 @@
 
         <div class="narrative-loading" id="narrative-loading">Waiting for LLM response...</div>
 
-        <div class="narrative-panel" id="narrative-panel">
+        <div class="narrative-panel interactive-only" id="narrative-panel">
           <h3>Narrative</h3>
           <div id="narrative-content"></div>
         </div>
+
+        <div class="comparison-container replay-only" id="comparison-container">
+          <div class="agent-panel" id="agent-panel">
+            <h3>Agent (Replay)</h3>
+            <div class="thought-section">
+              <div class="label">Commitment</div>
+              <div class="content" id="agent-commitment">--</div>
+            </div>
+            <div class="thought-section">
+              <div class="label">Reasoning</div>
+              <div class="content" id="agent-reasoning">--</div>
+            </div>
+            <div class="thought-section">
+              <div class="label">Note to Self</div>
+              <div class="content" id="agent-note">--</div>
+            </div>
+          </div>
+          <div class="narrator-panel-colored" id="narrator-panel-colored">
+            <h3>Narrator (LLM)</h3>
+            <div id="narrator-colored-content">
+              <div class="thought-section">
+                <div class="content" style="color:#888">Click "Generate Prompt Draft" then "Send to LLM"</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <details class="prompt-details replay-only" id="replay-prompt-details">
+          <summary>Replay Prompt (what agent saw)</summary>
+          <div class="prompt-content" id="replay-prompt-content">(select a step)</div>
+        </details>
       </div>
     </div>
 
