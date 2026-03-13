@@ -477,7 +477,7 @@ function generateDraft() {
   // Fill draft textareas and show the draft section
   draftSystemPrompt.value = systemPrompt;
   draftUserMessage.value = userMessage;
-  draftSection.classList.add('visible');
+  draftSection.open = true;
 }
 
 async function sendNarrate() {
@@ -590,7 +590,7 @@ function exitReplayMode() {
   replayActiveLevel = null;
 
   // Hide draft section
-  draftSection.classList.remove('visible');
+  draftSection.open = false;
 
   // Reload default game
   loadDefaultGame();

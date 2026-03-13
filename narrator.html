@@ -313,14 +313,18 @@
       cursor: wait;
     }
 
-    /* Draft section */
+    /* Draft section (collapsible) */
     .draft-section {
-      display: none;
       border: 1px solid #ddd;
       border-radius: 6px;
       padding: 10px 12px;
     }
-    .draft-section.visible { display: block; }
+    .draft-section summary {
+      cursor: pointer;
+      font-size: 15px;
+      color: #555;
+      padding: 2px 0;
+    }
     .draft-section label {
       display: block;
       font-size: 13px;
@@ -539,7 +543,6 @@
     .replay-only { display: none !important; }
     .wrapper.replay-mode .replay-only { display: block !important; }
     .wrapper.replay-mode .replay-only.playback-controls { display: flex !important; }
-    .wrapper.replay-mode .replay-only.comparison-container { display: grid !important; }
     .wrapper.replay-mode .replay-only.metadata-bar { display: flex !important; }
     .wrapper.replay-mode .interactive-only { display: none !important; }
     .wrapper.replay-mode .replay-drop-zone { display: none !important; }
@@ -617,13 +620,6 @@
     }
     .metadata-bar span { white-space: nowrap; }
 
-    /* Comparison container: side-by-side */
-    .comparison-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
     /* Blue agent panel */
     .agent-panel {
       border: 1px solid #4a7ab5;
@@ -672,12 +668,6 @@
       padding: 2px 4px;
     }
 
-    /* Responsive: stack comparison on narrow screens */
-    @media (max-width: 900px) {
-      .comparison-container {
-        grid-template-columns: 1fr;
-      }
-    }
   </style>
 </head>
 <body>
@@ -762,6 +752,27 @@
 
         <div class="action-log" id="action-log"></div>
 
+        <div class="agent-panel replay-only" id="agent-panel">
+          <h3>Agent (Replay)</h3>
+          <div class="thought-section">
+            <div class="label">Commitment</div>
+            <div class="content" id="agent-commitment">--</div>
+          </div>
+          <div class="thought-section">
+            <div class="label">Reasoning</div>
+            <div class="content" id="agent-reasoning">--</div>
+          </div>
+          <div class="thought-section">
+            <div class="label">Note to Self</div>
+            <div class="content" id="agent-note">--</div>
+          </div>
+        </div>
+
+        <details class="prompt-details replay-only" id="replay-prompt-details">
+          <summary>Replay Prompt (what agent saw)</summary>
+          <div class="prompt-content" id="replay-prompt-content">(select a step)</div>
+        </details>
+
         <div class="dpad" id="dpad">
           <button class="dpad-btn dpad-up" data-action="UP">^</button>
           <button class="dpad-btn dpad-left" data-action="LEFT">&lt;</button>
@@ -796,13 +807,14 @@
 
         <button class="narrator-btn" id="btn-generate-draft">Generate Prompt Draft</button>
 
-        <div class="draft-section" id="draft-section">
+        <details class="draft-section" id="draft-section">
+          <summary>LLM Prompt Draft</summary>
           <label for="draft-system-prompt">System Prompt</label>
           <textarea id="draft-system-prompt" spellcheck="false"></textarea>
           <label for="draft-user-message">User Message</label>
           <textarea id="draft-user-message" spellcheck="false"></textarea>
           <button class="narrator-btn" id="btn-send-narrate" style="margin-top: 10px;">Send to LLM</button>
-        </div>
+        </details>
 
         <div class="narrative-loading" id="narrative-loading">Waiting for LLM response...</div>
 
@@ -811,36 +823,14 @@
           <div id="narrative-content"></div>
         </div>
 
-        <div class="comparison-container replay-only" id="comparison-container">
-          <div class="agent-panel" id="agent-panel">
-            <h3>Agent (Replay)</h3>
+        <div class="narrator-panel-colored replay-only" id="narrator-panel-colored">
+          <h3>Narrator (LLM)</h3>
+          <div id="narrator-colored-content">
             <div class="thought-section">
-              <div class="label">Commitment</div>
-              <div class="content" id="agent-commitment">--</div>
-            </div>
-            <div class="thought-section">
-              <div class="label">Reasoning</div>
-              <div class="content" id="agent-reasoning">--</div>
-            </div>
-            <div class="thought-section">
-              <div class="label">Note to Self</div>
-              <div class="content" id="agent-note">--</div>
-            </div>
-          </div>
-          <div class="narrator-panel-colored" id="narrator-panel-colored">
-            <h3>Narrator (LLM)</h3>
-            <div id="narrator-colored-content">
-              <div class="thought-section">
-                <div class="content" style="color:#888">Click "Generate Prompt Draft" then "Send to LLM"</div>
-              </div>
+              <div class="content" style="color:#888">Click "Generate Prompt Draft" then "Send to LLM"</div>
             </div>
           </div>
         </div>
-
-        <details class="prompt-details replay-only" id="replay-prompt-details">
-          <summary>Replay Prompt (what agent saw)</summary>
-          <div class="prompt-content" id="replay-prompt-content">(select a step)</div>
-        </details>
       </div>
     </div>
 
