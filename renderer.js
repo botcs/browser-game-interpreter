@@ -104,6 +104,8 @@ export class Renderer {
       LIGHTORANGE: [250, 200, 100],
       LIGHTBLUE: [50, 100, 250],
       LIGHTGREEN: [50, 250, 50],
+      LIGHTPURPLE: [200, 150, 220],
+      LIGHTPINK: [255, 230, 230],
       DARKGRAY: [30, 30, 30],
       DARKBLUE: [20, 20, 100],
       GRAY: [90, 90, 90],

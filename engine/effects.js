@@ -35,11 +35,19 @@ export function transformTo(sprite, partner, game, { stype = 'wall' } = {}) {
   }
 }
 
-export function stepBackIfHasLess(sprite, partner, game, { resource, limit = 1, no_symmetry = false } = {}) {
+export function stepBackIfHasLess(sprite, partner, game, { resource, limit = 1, no_symmetry = false, exhaustStype = null } = {}) {
   if (sprite.resources[resource] < limit) {
     stepBack(sprite, partner, game, { no_symmetry });
   } else {
-    killSprite(partner, sprite, game);
+    if (exhaustStype) {
+      // Guard: the JS engine applies stepback effects twice per tick;
+      // only transform on the first application (partner not yet in kill_list)
+      if (!game.kill_list.includes(partner)) {
+        transformTo(partner, sprite, game, { stype: exhaustStype });
+      }
+    } else {
+      killSprite(partner, sprite, game);
+    }
   }
 }
 
@@ -89,7 +97,7 @@ export function bounceForward(sprite, partner, game) {
   }
 }
 
-export function catapultForward(sprite, partner, game) {
+export function catapultForward(sprite, partner, game, { exhaustStype = null } = {}) {
   if (sprite.lastrect.colliderect(partner.rect)) return;
   const direction = sprite.lastdirection;
   const len = Math.abs(direction.x) + Math.abs(direction.y);
@@ -104,6 +112,9 @@ export function catapultForward(sprite, partner, game) {
       || newRect.y + newRect.height > game.screensize[1]) return;
   sprite.rect = newRect;
   sprite.lastmove = 0;
+  if (exhaustStype) {
+    transformTo(partner, sprite, game, { stype: exhaustStype });
+  }
 }
 
 export function reverseDirection(sprite, partner, game, { with_step_back = true } = {}) {
@@ -226,7 +237,7 @@ export function teleportToExit(sprite, partner, game) {
   sprite.lastmove = 0;
 }
 
-export function teleportToOther(sprite, partner, game) {
+export function teleportToOther(sprite, partner, game, { exhaustStype = null } = {}) {
   if (sprite.lastrect.colliderect(partner.rect)) return;
   const siblings = game.sprite_registry.group(partner.key).filter(s => s !== partner);
   if (siblings.length === 0) return;
@@ -236,6 +247,10 @@ export function teleportToOther(sprite, partner, game) {
   // within the same _applyEffect loop (prevents ping-pong teleport)
   sprite.lastrect = e.rect.copy();
   sprite.lastmove = 0;
+  if (exhaustStype) {
+    transformTo(partner, sprite, game, { stype: exhaustStype });
+    transformTo(e, sprite, game, { stype: exhaustStype });
+  }
 }
 
 export function wallBounce(sprite, partner, game, { friction = 0 } = {}) {

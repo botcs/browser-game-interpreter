@@ -11,16 +11,21 @@ export const GAMES = {
         goal > Immovable img=colored_shapes/LIGHTGREEN_STAR
         key1 > Resource img=colored_shapes/ORANGE_DIAMOND limit=1
         door1 > Immovable img=colored_shapes/ORANGE_SQUARE
+        door1_used > Immovable img=colored_shapes/LIGHTORANGE_SQUARE
         key6 > Resource img=colored_shapes/BLUE_DIAMOND limit=1
         door2 > Immovable img=colored_shapes/RED_SQUARE
         teleporter > Immovable img=colored_shapes/PURPLE_HEXAGON
         catapult > Immovable img=colored_shapes/PINK_TRIANGLE
+        catapult_used > Immovable img=colored_shapes/LIGHTPINK_TRIANGLE
         t6 > Portal stype=t6 img=colored_shapes/PURPLE_HEXAGON
+        t6_used > Immovable img=colored_shapes/LIGHTPURPLE_HEXAGON
         t3 > Immovable img=colored_shapes/GREEN_HEXAGON
         key4 > Resource img=colored_shapes/GREEN_DIAMOND limit=1
         c6 > Immovable img=colored_shapes/RED_TRIANGLE
         door6 > Immovable img=colored_shapes/BLUE_SQUARE
+        door6_used > Immovable img=colored_shapes/LIGHTBLUE_SQUARE
         tp4 > Portal stype=tp4 img=colored_shapes/ORANGE_HEXAGON
+        tp4_used > Immovable img=colored_shapes/LIGHTORANGE_HEXAGON
 
     LevelMapping
         . > floor
@@ -42,11 +47,13 @@ export const GAMES = {
 
     InteractionSet
         avatar wall > stepBack
-        avatar door1 > stepBackIfHasLess resource=key1 limit=1
+        avatar door1 > stepBackIfHasLess resource=key1 limit=1 exhaustStype=door1_used
+        avatar door1_used > stepBack
         avatar door2 > stepBack
-        avatar door6 > stepBackIfHasLess resource=key6 limit=1
+        avatar door6 > stepBackIfHasLess resource=key6 limit=1 exhaustStype=door6_used
+        avatar door6_used > stepBack
 
-        avatar catapult > catapultForward
+        avatar catapult > catapultForward exhaustStype=catapult_used
 
         avatar key1 > changeResource resource=key1 value=1
         key1 avatar > killSprite
@@ -54,8 +61,8 @@ export const GAMES = {
         avatar key6 > changeResource resource=key6 value=1
         key6 avatar > killSprite
 
-        avatar t6 > teleportToOther
-        avatar tp4 > teleportToOther
+        avatar t6 > teleportToOther exhaustStype=t6_used
+        avatar tp4 > teleportToOther exhaustStype=tp4_used
 
         avatar key4 > changeResource resource=key4 value=1
         key4 avatar > killSprite
@@ -68,16 +75,21 @@ export const GAMES = {
         goal EOS > killSprite
         key1 EOS > killSprite
         door1 EOS > killSprite
+        door1_used EOS > killSprite
         key6 EOS > killSprite
         door2 EOS > killSprite
         teleporter EOS > killSprite
         catapult EOS > killSprite
+        catapult_used EOS > killSprite
         t6 EOS > killSprite
+        t6_used EOS > killSprite
         t3 EOS > killSprite
         key4 EOS > killSprite
         c6 EOS > killSprite
         door6 EOS > killSprite
+        door6_used EOS > killSprite
         tp4 EOS > killSprite
+        tp4_used EOS > killSprite
 
     TerminationSet
         SpriteCounter stype=goal limit=0 win=True

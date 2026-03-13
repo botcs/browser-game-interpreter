@@ -21,12 +21,14 @@ export const LIGHTGRAY = [150, 150, 150];
 export const DARKGRAY = [30, 30, 30];
 export const DARKBLUE = [20, 20, 100];
 export const PURPLE = [128, 0, 128];
+export const LIGHTPURPLE = [200, 150, 220];
+export const LIGHTPINK = [255, 230, 230];
 
 // All named colors for parser lookup
 export const COLORS = {
   GREEN, BLUE, RED, GRAY, WHITE, BROWN, BLACK, ORANGE, YELLOW,
   PINK, GOLD, LIGHTRED, LIGHTORANGE, LIGHTBLUE, LIGHTGREEN,
-  LIGHTGRAY, DARKGRAY, DARKBLUE, PURPLE,
+  LIGHTGRAY, DARKGRAY, DARKBLUE, PURPLE, LIGHTPURPLE, LIGHTPINK,
 };
 
 // Direction vectors as {x, y}

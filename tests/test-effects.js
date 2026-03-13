@@ -148,4 +148,87 @@ export function runEffectTests() {
       assertEqual(game.create_list[0][0], 'wall');
     });
   });
+
+  describe('stepBackIfHasLess exhaustStype', () => {
+    it('transforms partner when sprite has enough resource', () => {
+      const game = makeGame();
+      const avatar = makeSprite('avatar', 5, 5);
+      avatar.lastrect = new Rect(4, 5, 1, 1);
+      avatar.resources['key1'] = 1;
+      const door = makeSprite('door1', 5, 5);
+      door.lastrect = door.rect;
+      effects.stepBackIfHasLess(avatar, door, game, { resource: 'key1', limit: 1, exhaustStype: 'door1_used' });
+      // Door should be killed (transformTo kills original) and door1_used created
+      assertEqual(game.kill_list.length, 1);
+      assertEqual(game.kill_list[0], door);
+      assertEqual(game.create_list.length, 1);
+      assertEqual(game.create_list[0][0], 'door1_used');
+    });
+
+    it('still blocks when sprite lacks resource (exhaustStype ignored)', () => {
+      const game = makeGame();
+      const avatar = makeSprite('avatar', 5, 5);
+      avatar.lastrect = new Rect(4, 5, 1, 1);
+      avatar.resources['key1'] = 0;
+      const door = makeSprite('door1', 5, 5);
+      door.lastrect = door.rect;
+      effects.stepBackIfHasLess(avatar, door, game, { resource: 'key1', limit: 1, exhaustStype: 'door1_used' });
+      // Avatar should be stepped back, no kills or creates
+      assertEqual(avatar.rect.x, 4);
+      assertEqual(game.kill_list.length, 0);
+      assertEqual(game.create_list.length, 0);
+    });
+  });
+
+  describe('catapultForward exhaustStype', () => {
+    it('transforms catapult after successful launch', () => {
+      const game = makeGame();
+      game.screensize = [13, 13];
+      const avatar = makeSprite('avatar', 5, 5);
+      avatar.lastrect = new Rect(4, 5, 1, 1); // approached from left -> lastdirection = {x:1, y:0}
+      const catapult = makeSprite('catapult', 5, 5);
+      catapult.lastrect = catapult.rect;
+      effects.catapultForward(avatar, catapult, game, { exhaustStype: 'catapult_used' });
+      // Avatar should be catapulted right
+      assertEqual(avatar.rect.x, 6);
+      // Catapult should be killed and catapult_used created
+      assertEqual(game.kill_list.length, 1);
+      assertEqual(game.kill_list[0], catapult);
+      assertEqual(game.create_list.length, 1);
+      assertEqual(game.create_list[0][0], 'catapult_used');
+    });
+
+    it('does NOT exhaust when already on catapult (no launch)', () => {
+      const game = makeGame();
+      game.screensize = [13, 13];
+      const avatar = makeSprite('avatar', 5, 5);
+      avatar.lastrect = new Rect(5, 5, 1, 1); // was already on catapult -> lastdirection = {x:0, y:0}
+      const catapult = makeSprite('catapult', 5, 5);
+      effects.catapultForward(avatar, catapult, game, { exhaustStype: 'catapult_used' });
+      // No launch, no exhaustion
+      assertEqual(game.kill_list.length, 0);
+      assertEqual(game.create_list.length, 0);
+    });
+  });
+
+  describe('teleportToOther exhaustStype', () => {
+    it('transforms both endpoints after teleport', () => {
+      const game = makeGame();
+      const reg = game.sprite_registry;
+      reg.registerSpriteClass('t6', Immovable, {}, ['t6']);
+      const portal1 = reg.createSprite('t6', { pos: [3, 3], size: [1, 1] });
+      const portal2 = reg.createSprite('t6', { pos: [7, 7], size: [1, 1] });
+      const avatar = makeSprite('avatar', 3, 3);
+      avatar.lastrect = new Rect(2, 3, 1, 1); // approached from left
+      effects.teleportToOther(avatar, portal1, game, { exhaustStype: 't6_used' });
+      // Avatar should be teleported to portal2 position
+      assertEqual(avatar.rect.x, 7);
+      assertEqual(avatar.rect.y, 7);
+      // Both portals should be killed and t6_used created
+      assertEqual(game.kill_list.length, 2);
+      assertEqual(game.create_list.length, 2);
+      assertEqual(game.create_list[0][0], 't6_used');
+      assertEqual(game.create_list[1][0], 't6_used');
+    });
+  });
 }

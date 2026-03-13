@@ -166,4 +166,147 @@ export function runGameTests() {
       assert(!level.won, 'Game should be lost');
     });
   });
+
+  // Roomworld game description for exhaustion integration tests
+  const ROOMWORLD_DESC = `BasicGame
+    SpriteSet
+        floor > Immovable img=colors/LIGHTGRAY
+        wall > Immovable img=colors/DARKGRAY
+        avatar > MovingAvatar img=colored_shapes/YELLOW_CIRCLE
+        goal > Immovable img=colored_shapes/LIGHTGREEN_STAR
+        key1 > Resource img=colored_shapes/ORANGE_DIAMOND limit=1
+        door1 > Immovable img=colored_shapes/ORANGE_SQUARE
+        door1_used > Immovable img=colored_shapes/LIGHTORANGE_SQUARE
+        t6 > Portal stype=t6 img=colored_shapes/PURPLE_HEXAGON
+        t6_used > Immovable img=colored_shapes/LIGHTPURPLE_HEXAGON
+        catapult > Immovable img=colored_shapes/PINK_TRIANGLE
+        catapult_used > Immovable img=colored_shapes/LIGHTPINK_TRIANGLE
+    LevelMapping
+        . > floor
+        w > floor wall
+        A > floor avatar
+        x > floor goal
+        K > floor key1
+        D > floor door1
+        T > floor t6
+        c > floor catapult
+    InteractionSet
+        avatar wall > stepBack
+        avatar door1 > stepBackIfHasLess resource=key1 limit=1 exhaustStype=door1_used
+        avatar door1_used > stepBack
+        avatar key1 > changeResource resource=key1 value=1
+        key1 avatar > killSprite
+        avatar t6 > teleportToOther exhaustStype=t6_used
+        avatar catapult > catapultForward exhaustStype=catapult_used
+        goal avatar > killSprite
+    TerminationSet
+        SpriteCounter stype=goal limit=0 win=True
+        Timeout limit=500 win=False`;
+
+  describe('Roomworld door exhaustion', () => {
+    it('door transforms to door1_used after opening, blocks return', () => {
+      // Layout: w w w w w w w
+      //         w A . K D . x w   (avatar at 1, key at 3, door at 4, goal at 6)
+      //         w w w w w w w w
+      const parser = new VGDLParser();
+      const game = parser.parseGame(ROOMWORLD_DESC);
+      const level = game.buildLevel('wwwwwwww\nwA.KD.xw\nwwwwwwww');
+      const avatar = level.getAvatars()[0];
+
+      // Move right x2 to collect key1
+      level.tick(ACTION.RIGHT); // (1,1) -> (2,1)
+      level.tick(ACTION.RIGHT); // (2,1) -> (3,1) collect key1
+      assertEqual(avatar.resources['key1'], 1);
+
+      // Move right to open door
+      level.tick(ACTION.RIGHT); // (3,1) -> (4,1) open door1 -> door1_used
+      assertEqual(avatar.rect.x, 4);
+
+      // door1 should be gone, door1_used should exist
+      assertEqual(level.sprite_registry.withStype('door1').length, 0);
+      assertEqual(level.sprite_registry.withStype('door1_used').length, 1);
+
+      // Move past door
+      level.tick(ACTION.RIGHT); // (4,1) -> (5,1)
+      assertEqual(avatar.rect.x, 5);
+
+      // Try to go back -- blocked by door1_used
+      level.tick(ACTION.LEFT); // (5,1) -> blocked at (5,1)
+      assertEqual(avatar.rect.x, 5);
+    });
+
+    it('solve still works: collect key, open door, reach goal', () => {
+      const parser = new VGDLParser();
+      const game = parser.parseGame(ROOMWORLD_DESC);
+      const level = game.buildLevel('wwwwwwww\nwA.KD.xw\nwwwwwwww');
+
+      level.tick(ACTION.RIGHT); // (1) -> (2)
+      level.tick(ACTION.RIGHT); // (2) -> (3) collect key
+      level.tick(ACTION.RIGHT); // (3) -> (4) open door
+      level.tick(ACTION.RIGHT); // (4) -> (5)
+      level.tick(ACTION.RIGHT); // (5) -> (6) goal
+      assert(level.ended, 'Game should have ended');
+      assert(level.won, 'Game should be won');
+    });
+  });
+
+  describe('Roomworld teleporter exhaustion', () => {
+    it('teleporter pair becomes inert after use', () => {
+      // Layout: w w w w w w w w
+      //         w T . A . T . x w   T=t6 at (1,1) and (5,1), avatar at (3,1), goal at (7,1)
+      //         w w w w w w w w w
+      const parser = new VGDLParser();
+      const game = parser.parseGame(ROOMWORLD_DESC);
+      const level = game.buildLevel('wwwwwwwww\nwT.A.T.xw\nwwwwwwwww');
+      const avatar = level.getAvatars()[0];
+
+      assertEqual(level.sprite_registry.withStype('t6').length, 2);
+
+      // Move left x2 onto t6 at (1,1) -> teleport to (5,1)
+      level.tick(ACTION.LEFT); // (3,1) -> (2,1)
+      level.tick(ACTION.LEFT); // (2,1) -> step onto t6 at (1,1) -> teleport to (5,1)
+      assertEqual(avatar.rect.x, 5);
+      assertEqual(avatar.rect.y, 1);
+
+      // Both t6 should be gone, t6_used should exist
+      assertEqual(level.sprite_registry.withStype('t6').length, 0);
+      assertEqual(level.sprite_registry.withStype('t6_used').length, 2);
+
+      // Walk away and return -- no teleport
+      level.tick(ACTION.LEFT); // (5,1) -> (4,1)
+      assertEqual(avatar.rect.x, 4);
+      level.tick(ACTION.RIGHT); // (4,1) -> (5,1) walk onto t6_used, no teleport
+      assertEqual(avatar.rect.x, 5);
+      assertEqual(avatar.rect.y, 1);
+    });
+  });
+
+  describe('Roomworld catapult exhaustion', () => {
+    it('catapult becomes inert after launch', () => {
+      // Layout: w w w w w w w w w
+      //         w . . A c . . x w   avatar at (3,1), catapult at (4,1), goal at (7,1)
+      //         w w w w w w w w w
+      const parser = new VGDLParser();
+      const game = parser.parseGame(ROOMWORLD_DESC);
+      const level = game.buildLevel('wwwwwwwww\nw..Ac..xw\nwwwwwwwww');
+      const avatar = level.getAvatars()[0];
+
+      // Step right onto catapult -> catapulted right to (5,1)
+      level.tick(ACTION.RIGHT); // (3,1) -> catapult at (4,1) -> launched to (5,1)
+      assertEqual(avatar.rect.x, 5);
+
+      // Catapult should be exhausted
+      assertEqual(level.sprite_registry.withStype('catapult').length, 0);
+      assertEqual(level.sprite_registry.withStype('catapult_used').length, 1);
+
+      // Walk back onto catapult_used -> no launch, just normal walk
+      level.tick(ACTION.LEFT); // (5,1) -> (4,1) on catapult_used
+      assertEqual(avatar.rect.x, 4);
+      // Walk off and re-approach
+      level.tick(ACTION.LEFT); // (4,1) -> (3,1)
+      assertEqual(avatar.rect.x, 3);
+      level.tick(ACTION.RIGHT); // (3,1) -> (4,1) no catapult effect
+      assertEqual(avatar.rect.x, 4);
+    });
+  });
 }
